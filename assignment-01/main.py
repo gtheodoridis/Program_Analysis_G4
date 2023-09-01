@@ -29,7 +29,7 @@ def remove_comments(text):
     return re.sub(multiline, '', re.sub(oneline, '', text))
 
 
-def get_imports(text, packages):
+def get_imports(text, packages, current_package_name):
     classes_pattern = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
     inside_classes_pattern = re.compile(r"(?:class )([A-Z]{1}[a-zA-Z]+)")
 
@@ -55,7 +55,10 @@ def get_imports(text, packages):
             if '.' in _import:
                 result_dependencies.append(_import)
             else:
-                result_dependencies.append('java.lang.'+_import)
+                if _import in packages[current_package_name]:
+                    result_dependencies.append(current_package_name+'.'+_import)
+                else:
+                    result_dependencies.append('java.lang.'+_import)
 
     return result_dependencies
 
@@ -70,7 +73,12 @@ def get_dependencies(paths, packages):
             text = file.read()
             no_comments = remove_comments(text)
 
-            imports = get_imports(no_comments, packages)
+            current_package_name = ''
+            with open(path, 'r') as file:
+                text = file.read()
+                current_package_name = re.findall(r"(?:package )([a-z.]+)", text)[0]
+
+            imports = get_imports(no_comments, packages, current_package_name)
             try:
                 imports.remove(pathlib.Path(path).name.replace('.java', ''))
             except:
