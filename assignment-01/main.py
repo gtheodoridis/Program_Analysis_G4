@@ -30,7 +30,7 @@ def remove_comments(text):
 
 
 def get_imports(text, packages, current_package_name):
-    classes_pattern = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
+    classes_pattern = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
     inside_classes_pattern = re.compile(r"(?:class )([A-Z]{1}[a-zA-Z]+)")
 
     all_classes = re.findall(classes_pattern, text)
@@ -96,7 +96,6 @@ def get_dependencies(paths, packages):
 def draw_graph(dependencies):
     dot = graphviz.Digraph(comment='Dependencies')
     for key in dependencies.keys():
-        dot.node(key)
         for value in dependencies[key]:
             dot.edge(key, value)
     dot.render('dependencies.gv', view=True)
