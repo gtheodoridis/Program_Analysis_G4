@@ -60,7 +60,6 @@ def get_dependencies(paths, packages):
 
     for path in paths:
         with open(path, 'r') as file:
-            print(path)
 
             text = file.read()
             no_comments = remove_comments(text)
@@ -71,7 +70,12 @@ def get_dependencies(paths, packages):
             except:
                 pass
 
-        dependencies[pathlib.Path(path).name] = imports
+        for name in packages:
+            className = pathlib.Path(path).name.replace('.java', '')
+            if className in packages[name]:
+                dependencies[name + '.' + className] = imports
+                break
+        
 
     return dependencies
 
