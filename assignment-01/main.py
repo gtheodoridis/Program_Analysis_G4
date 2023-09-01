@@ -2,6 +2,7 @@ import glob
 import sys
 import re
 import pathlib
+import graphviz
 
 def get_paths(folder_path):
     return glob.glob(folder_path + '/**/*.java', recursive = True)
@@ -74,6 +75,13 @@ def get_dependencies(paths, packages):
 
     return dependencies
 
+def draw_graph(dependencies):
+    dot = graphviz.Digraph(comment='Dependencies')
+    for key in dependencies.keys():
+        dot.node(key)
+        for value in dependencies[key]:
+            dot.edge(key, value)
+    dot.render('dependencies.gv', view=True)
 
 def main():
     args = sys.argv[1:]
@@ -83,6 +91,7 @@ def main():
     paths = get_paths(args[0])
     packages = get_packages(paths)
     dependencies = get_dependencies(paths, packages)
+    draw_graph(dependencies)
     print(dependencies)
     
 
