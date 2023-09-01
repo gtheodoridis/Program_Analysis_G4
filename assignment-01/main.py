@@ -88,7 +88,6 @@ def get_dependencies(paths, packages):
 def draw_graph(dependencies):
     dot = graphviz.Digraph(comment='Dependencies')
     for key in dependencies.keys():
-        dot.node(key)
         for value in dependencies[key]:
             dot.edge(key, value)
     dot.render('dependencies.gv', view=True)
