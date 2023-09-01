@@ -30,9 +30,15 @@ def remove_comments(text):
 
 
 def get_imports(text, packages):
-    classes = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
-    res = re.findall(classes, text)
-    all_imports = [i[0] for i in res]
+    classes_pattern = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
+    inside_classes_pattern = re.compile(r"(?:class )([A-Z]{1}[a-zA-Z]+)")
+
+    all_classes = re.findall(classes_pattern, text)
+    inside_classes = re.findall(inside_classes_pattern, text)
+    
+    all_imports = [i[0] for i in all_classes]
+    all_imports = list(set(all_imports)-set(inside_classes))
+
     for _import in all_imports:
         if '*' in _import:
             package = _import.replace('.*', '')
