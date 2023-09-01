@@ -29,7 +29,7 @@ def remove_comments(text):
 
 
 def get_imports(text, packages):
-    classes = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:.))")
+    classes = re.compile(r"(?:[^\w@])(([a-z.]+\.)?\*?(?<!class )([A-Z]{1}[a-zA-Z]+))(?:(?:\()|(?: [A-Za-z])|(?:))")
     res = re.findall(classes, text)
     all_imports = [i[0] for i in res]
     for _import in all_imports:
@@ -55,6 +55,8 @@ def get_imports(text, packages):
 
 def get_dependencies(paths, packages):
 
+    dependencies = {}
+
     for path in paths:
         with open(path, 'r') as file:
             print(path)
@@ -67,8 +69,10 @@ def get_dependencies(paths, packages):
                 imports.remove(pathlib.Path(path).name.replace('.java', ''))
             except:
                 pass
-            print(imports)
-            print()
+
+        dependencies[pathlib.Path(path).name] = imports
+
+    return dependencies
 
 
 def main():
@@ -78,7 +82,8 @@ def main():
         
     paths = get_paths(args[0])
     packages = get_packages(paths)
-    get_dependencies(paths, packages)
+    dependencies = get_dependencies(paths, packages)
+    print(dependencies)
     
 
 if __name__ == "__main__":
