@@ -70,6 +70,7 @@ class ClassNames(SyntaxFold):
     package_name = ""
     class_fields = {}
     class_methods = {}
+    class_imports = set()
 
     def classify_declaration(self, node, p, dic):
         if p.parent:
@@ -95,6 +96,16 @@ class ClassNames(SyntaxFold):
         for child in node.named_children:
             if child.type == "scoped_identifier":
                 self.package_name = child.text.decode()
+                break
+        return set()
+
+    def import_declaration(self, node, results):
+        for child in node.named_children:
+            if child.type == "scoped_identifier":
+                import_path = child.text.decode()
+                if child.next_sibling and child.next_sibling.type == ".":
+                    import_path += ".*"
+                self.class_imports.add(import_path)
                 break
         return set()
 
@@ -137,6 +148,7 @@ def analyse(paths):
     parser.set_language(JAVA_LANGUAGE)
 
     packages = {}
+    class_imports = {}
 
     # Get class information
     for path in paths:
@@ -156,6 +168,11 @@ def analyse(paths):
         else:
             packages[classNames.package_name] = [publicClassName]
 
+        new_set = set()
+        new_set.update(classNames.class_imports)
+        class_imports[classNames.package_name + "." + publicClassName] =  new_set
+        classNames.class_imports.clear()
+
     # Get dependencies
     for path in paths:
         with open(path, "rb") as f:
@@ -169,7 +186,33 @@ def analyse(paths):
         for name in packages:
             className = pathlib.Path(path).name.replace(".java", "")
             if className in packages[name]:
-                dependencies[name + "." + className] = list(imports)
+                class_path = name + "." + className
+                new_class_imports = set()
+                new_class_imports.update(class_imports[class_path])
+
+                for class_import in class_imports[class_path]:
+                    if class_import.endswith(".*"):
+                        new_class_imports.remove(class_import)
+                        for cn in packages[class_import.replace(".*", "")]:
+                            new_class_imports.add(class_import.replace(".*", "") + "." + cn)
+                class_imports[class_path] = new_class_imports
+                
+                new_imports = set()
+                for _import in imports:
+                    is_imported = False
+
+                    for class_import in new_class_imports:
+                        if class_import.endswith("." + _import):
+                            new_imports.add(class_import)
+                            is_imported = True
+                            break
+                    if not is_imported:
+                        if _import in packages[name]:
+                            new_imports.add(name + "." + _import)
+                        else:
+                            new_imports.add("java.lang." + _import)
+                            
+                dependencies[class_path] = list(new_imports)
                 break
 
     return dependencies, fields, methods, classes
@@ -180,7 +223,7 @@ def draw_graph(dependencies, fields, methods, classes):
     for key in dependencies.keys():
         for value in dependencies[key]:
             dot.edge(key, value)
-    dot.render("class_diagram.gv", view=True)
+    #dot.render("class_diagram.gv", view=True)
 
 
 def main():

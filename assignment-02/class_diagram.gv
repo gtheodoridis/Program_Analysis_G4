@@ -1,15 +1,15 @@
 // Class Diagram
 digraph {
-	"dtu.deps.normal.Primes" -> Iterable
-	"dtu.deps.normal.Primes" -> List
-	"dtu.deps.normal.Primes" -> ArrayList
-	"dtu.deps.normal.Primes" -> PrimesIterator
-	"dtu.deps.normal.Primes" -> String
-	"dtu.deps.normal.Primes" -> Iterator
-	"dtu.deps.normal.Primes" -> Integer
-	"dtu.deps.simple.Other" -> String
-	"dtu.deps.simple.Example" -> Other
-	"dtu.deps.simple.Example" -> String
-	"dtu.deps.tricky.Tricky" -> Example
-	"dtu.deps.tricky.Tricky" -> Utils
+	"dtu.deps.normal.Primes" -> "java.lang.Iterable"
+	"dtu.deps.normal.Primes" -> "java.util.Iterator"
+	"dtu.deps.normal.Primes" -> "java.lang.Integer"
+	"dtu.deps.normal.Primes" -> "java.util.ArrayList"
+	"dtu.deps.normal.Primes" -> "java.lang.PrimesIterator"
+	"dtu.deps.normal.Primes" -> "java.util.List"
+	"dtu.deps.normal.Primes" -> "java.lang.String"
+	"dtu.deps.simple.Other" -> "java.lang.String"
+	"dtu.deps.simple.Example" -> "java.lang.String"
+	"dtu.deps.simple.Example" -> "dtu.deps.simple.Other"
+	"dtu.deps.tricky.Tricky" -> "dtu.deps.util.Utils"
+	"dtu.deps.tricky.Tricky" -> "dtu.deps.simple.Example"
 }
