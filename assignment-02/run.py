@@ -3,7 +3,7 @@
 from tree_sitter import Language, Parser
 import glob
 import pathlib
-import graphviz
+import pydot
 
 
 def is_child_of(child_node, parent_node):
@@ -219,11 +219,51 @@ def analyse(paths):
 
 
 def draw_graph(dependencies, fields, methods, classes):
-    dot = graphviz.Digraph(comment="Class Diagram")
+
+    # Create a new UML diagram
+    uml_diagram = pydot.Dot(graph_type='digraph', rankdir='TB')
+
+    # Collect all classes
+    all_classes = set(map(lambda x: x[0], classes))
+    all_classes.update(dependencies.keys())
     for key in dependencies.keys():
         for value in dependencies[key]:
-            dot.edge(key, value)
-    #dot.render("class_diagram.gv", view=True)
+            all_classes.add(value)
+    all_classes.update(fields.keys())
+    all_classes.update(methods.keys())
+
+    pydot_classes = {}
+
+    for class_name in all_classes:
+        # Create classes
+        # Add attributes and methods to classes
+        label = "<" + class_name + "<br align='left'/>--------<br/>"
+        if class_name in fields:
+            for field in fields[class_name]:
+                label += "+ " + field + "<br align='left'/>"
+        if label[-5:] != "<br/>":
+            label += "--------<br/>"
+        if class_name in methods:
+            for method in methods[class_name]:
+                label += "+ " + method + "()<br align='left'/>"
+        if label[-5:] == "<br/>":
+            label = label[:-13]
+        label += ">"
+
+        class1 = pydot.Node(class_name, shape="rectangle", label = label)
+
+        # Add classes to the diagram
+        uml_diagram.add_node(class1)
+        pydot_classes[class_name] = class1
+
+    for key in dependencies.keys():
+        for value in dependencies[key]:
+            # Create associations between classes
+            association = pydot.Edge(pydot_classes[key], pydot_classes[value])
+            uml_diagram.add_edge(association)
+
+    # Save the diagram to a file
+    uml_diagram.write_png("class_diagram.png")
 
 
 def main():
