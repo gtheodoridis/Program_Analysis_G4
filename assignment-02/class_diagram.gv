@@ -1,0 +1,15 @@
+// Class Diagram
+digraph {
+	"dtu.deps.normal.Primes" -> Iterable
+	"dtu.deps.normal.Primes" -> List
+	"dtu.deps.normal.Primes" -> ArrayList
+	"dtu.deps.normal.Primes" -> PrimesIterator
+	"dtu.deps.normal.Primes" -> String
+	"dtu.deps.normal.Primes" -> Iterator
+	"dtu.deps.normal.Primes" -> Integer
+	"dtu.deps.simple.Other" -> String
+	"dtu.deps.simple.Example" -> Other
+	"dtu.deps.simple.Example" -> String
+	"dtu.deps.tricky.Tricky" -> Example
+	"dtu.deps.tricky.Tricky" -> Utils
+}

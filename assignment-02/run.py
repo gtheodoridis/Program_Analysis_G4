@@ -1,4 +1,9 @@
+#!/usr/bin/env python3
+
 from tree_sitter import Language, Parser
+import glob
+import pathlib
+import graphviz
 
 
 def is_child_of(child_node, parent_node):
@@ -29,16 +34,16 @@ class TypeIdentifiers(SyntaxFold):
         return set().union(*results)
 
     def type_identifier(self, node, results):
-        return {node.text}
+        return {node.text.decode()}
 
 
 class ContextSensitive(SyntaxFold):
     def type_identifier(self, node, results):
         def ret(ids):
-            if node.text in ids:
+            if node.text.decode() in ids:
                 return set()
             else:
-                return {node.text}
+                return {node.text.decode()}
 
         return ret
 
@@ -62,6 +67,7 @@ class ContextSensitive(SyntaxFold):
 
 
 class ClassNames(SyntaxFold):
+    package_name = ""
     class_fields = {}
     class_methods = {}
 
@@ -74,13 +80,23 @@ class ClassNames(SyntaxFold):
                     if p.type == "class_declaration" and p.named_children:
                         for child in p.named_children:
                             if child.type == "identifier":
-                                if child.text in dic:
-                                    dic[child.text].append(node.text)
+                                class_path = (
+                                    self.package_name + "." + child.text.decode()
+                                )
+                                if class_path in dic:
+                                    dic[class_path].append(node.text.decode())
                                 else:
-                                    dic[child.text] = [node.text]
+                                    dic[class_path] = [node.text.decode()]
 
     def default(self, node, results):
         return set().union(*results)
+
+    def package_declaration(self, node, results):
+        for child in node.named_children:
+            if child.type == "scoped_identifier":
+                self.package_name = child.text.decode()
+                break
+        return set()
 
     def identifier(self, node, results):
         if node.parent:
@@ -93,26 +109,95 @@ class ClassNames(SyntaxFold):
             elif p.type == "method_declaration":
                 self.classify_declaration(node, p, self.class_methods)
             elif p.type == "class_declaration":
-                return {(node.text, p.start_byte, p.end_byte)}
+                return {
+                    (
+                        self.package_name + "." + node.text.decode(),
+                        p.start_byte,
+                        p.end_byte,
+                    )
+                }
         return set()
 
 
-FILE = "./languages.so"  # the ./ is important
-Language.build_library(FILE, ["tree-sitter-java"])
-JAVA_LANGUAGE = Language(FILE, "java")
+def get_paths(folder_path):
+    return glob.glob(folder_path + "/**/*.java", recursive=True)
 
-parser = Parser()
-parser.set_language(JAVA_LANGUAGE)
 
-with open(
-    "/home/hollowman/Downloads/course-02242-examples/src/dependencies/java/dtu/deps/normal/Primes.java",
-    "rb",
-) as f:
-    tree = parser.parse(f.read())
+def analyse(paths):
+    dependencies = {}
+    fields = {}
+    methods = {}
+    classes = set()
 
-# the tree is now ready for analysing
-print(ContextSensitive().visit(tree.root_node)(set()))
-classes = ClassNames()
-print(classes.visit(tree.root_node))
-print(classes.class_fields)
-print(classes.class_methods)
+    FILE = "./languages.so"  # the ./ is important
+    Language.build_library(FILE, ["../tree-sitter-java"])
+    JAVA_LANGUAGE = Language(FILE, "java")
+
+    parser = Parser()
+    parser.set_language(JAVA_LANGUAGE)
+
+    packages = {}
+
+    # Get class information
+    for path in paths:
+        with open(path, "rb") as f:
+            tree = parser.parse(f.read())
+
+        # the tree is now ready for analysing
+        classNames = ClassNames()
+        classes.update(classNames.visit(tree.root_node))
+        fields.update(classNames.class_fields)
+        methods.update(classNames.class_methods)
+
+        publicClassName = pathlib.Path(path).name.replace(".java", "")
+
+        if classNames.package_name in packages:
+            packages[classNames.package_name].append(publicClassName)
+        else:
+            packages[classNames.package_name] = [publicClassName]
+
+    # Get dependencies
+    for path in paths:
+        with open(path, "rb") as f:
+            tree = parser.parse(f.read())
+
+        imports = ContextSensitive().visit(tree.root_node)(set())
+        publicClassName = pathlib.Path(path).name.replace(".java", "")
+        if publicClassName in imports:
+            imports.remove(publicClassName)
+
+        for name in packages:
+            className = pathlib.Path(path).name.replace(".java", "")
+            if className in packages[name]:
+                dependencies[name + "." + className] = list(imports)
+                break
+
+    return dependencies, fields, methods, classes
+
+
+def draw_graph(dependencies, fields, methods, classes):
+    dot = graphviz.Digraph(comment="Class Diagram")
+    for key in dependencies.keys():
+        for value in dependencies[key]:
+            dot.edge(key, value)
+    dot.render("class_diagram.gv", view=True)
+
+
+def main():
+    # import sys
+    # args = sys.argv[1:]
+    # if len(args) != 1:
+    #     exit("You should provide a path to a folder")
+
+    # paths = get_paths(args[0])
+    paths = get_paths("../course-02242-examples/src/dependencies/java/dtu/deps")
+    dependencies, fields, methods, classes = analyse(paths)
+    draw_graph(dependencies, fields, methods, classes)
+    print(dependencies)
+    print(fields)
+    print(methods)
+    print(classes)
+
+
+if __name__ == "__main__":
+    main()
