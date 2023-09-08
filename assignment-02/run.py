@@ -7,6 +7,7 @@ import pydot
 
 
 def is_child_of(child_node, parent_node):
+    # Checks if one node is a child of another node in the syntax tree.
     # Get the start and end positions of the parent and child nodes.
     child_start = child_node.start_byte
     child_end = child_node.end_byte
@@ -21,6 +22,7 @@ def is_child_of(child_node, parent_node):
 
 
 class SyntaxFold:
+     # A base class for folding over the syntax tree.
     def visit(self, node):
         results = [self.visit(n) for n in node.children]
         if hasattr(self, node.type):
@@ -30,6 +32,7 @@ class SyntaxFold:
 
 
 class TypeIdentifiers(SyntaxFold):
+    # A class for extracting type identifiers from the syntax tree.
     def default(self, node, results):
         return set().union(*results)
 
@@ -38,6 +41,7 @@ class TypeIdentifiers(SyntaxFold):
 
 
 class ContextSensitive(SyntaxFold):
+    # A class for handling context-sensitive analysis of the syntax tree.
     def type_identifier(self, node, results):
         def ret(ids):
             if node.text.decode() in ids:
@@ -67,6 +71,7 @@ class ContextSensitive(SyntaxFold):
 
 
 class ClassNames(SyntaxFold):
+    # A class for extracting class names, fields, and methods from the syntax tree.
     package_name = ""
     class_fields = {}
     class_methods = {}
@@ -131,10 +136,12 @@ class ClassNames(SyntaxFold):
 
 
 def get_paths(folder_path):
+    # Retrieves a list of file paths for Java source code files in a folder.
     return glob.glob(folder_path + "/**/*.java", recursive=True)
 
 
 def analyse(paths):
+    # Analyzes Java source code files to extract dependencies, fields, methods, and classes.
     dependencies = {}
     fields = {}
     methods = {}
@@ -219,6 +226,7 @@ def analyse(paths):
 
 
 def draw_graph(dependencies, fields, methods, classes):
+    # Generates a class diagram using the extracted information and pydot.
 
     # Create a new UML diagram
     uml_diagram = pydot.Dot(graph_type='digraph', rankdir='TB')
