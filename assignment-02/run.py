@@ -76,6 +76,7 @@ class ClassNames(SyntaxFold):
     class_fields = {}
     class_methods = {}
     class_imports = set()
+    class_fields_access = set()
 
     def classify_declaration(self, node, p, dic):
         if p.parent:
@@ -134,6 +135,17 @@ class ClassNames(SyntaxFold):
                 }
         return set()
 
+    def field_access(self, node, results):
+        if node.parent:
+            p = node.parent
+            if p.type == "method_invocation" or p.type == "assignment_expression":
+                text = node.text.decode()
+                if text[0].isupper():
+                    self.class_fields_access.add("java.lang." + text.split(".")[0])
+                else:
+                    self.class_fields_access.add(text)
+
+        return set()
 
 def get_paths(folder_path):
     # Retrieves a list of file paths for Java source code files in a folder.
@@ -156,6 +168,7 @@ def analyse(paths):
 
     packages = {}
     class_imports = {}
+    class_fields_access = {}
 
     # Get class information
     for path in paths:
@@ -178,7 +191,12 @@ def analyse(paths):
         new_set = set()
         new_set.update(classNames.class_imports)
         class_imports[classNames.package_name + "." + publicClassName] =  new_set
+        new_fields_access = set()
+        new_fields_access.update(classNames.class_fields_access)
+        class_fields_access[classNames.package_name + "." + publicClassName] = new_fields_access
+
         classNames.class_imports.clear()
+        classNames.class_fields_access.clear()
 
     # Get dependencies
     for path in paths:
@@ -220,6 +238,7 @@ def analyse(paths):
                             new_imports.add("java.lang." + _import)
                             
                 dependencies[class_path] = list(new_imports)
+                dependencies[class_path].extend(class_fields_access[class_path])
                 break
 
     return dependencies, fields, methods, classes
