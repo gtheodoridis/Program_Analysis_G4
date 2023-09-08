@@ -4,6 +4,7 @@ from tree_sitter import Language, Parser
 import glob
 import pathlib
 import pydot
+from collections import namedtuple
 
 
 def is_child_of(child_node, parent_node):
@@ -133,19 +134,25 @@ class ClassNames(SyntaxFold):
                         p.end_byte,
                     )
                 }
+            elif p.type == "method_invocation":
+                text = p.text.decode()
+                text = text.split('.')[:-1]
+
+                imp = []
+                flag = False
+                for el in text:
+                    imp.append(el)
+                    if el[0].isupper():
+                        flag = True
+                        break
+                
+                if flag:
+                    text = '.'.join(imp)
+
+                    if len(imp)>0:
+                        self.class_fields_access.add(text)
         return set()
 
-    def field_access(self, node, results):
-        if node.parent:
-            p = node.parent
-            if p.type == "method_invocation" or p.type == "assignment_expression":
-                text = node.text.decode()
-                if text[0].isupper():
-                    self.class_fields_access.add("java.lang." + text.split(".")[0])
-                else:
-                    self.class_fields_access.add(text)
-
-        return set()
 
 def get_paths(folder_path):
     # Retrieves a list of file paths for Java source code files in a folder.
@@ -208,6 +215,23 @@ def analyse(paths):
         if publicClassName in imports:
             imports.remove(publicClassName)
 
+        list_of_imports_to_remove = []
+        for _import in imports:
+            for className in classes:
+                if className[0].endswith("." + _import):
+                    for parentClassName in classes:
+                        if parentClassName[0].endswith("." + publicClassName):
+                            Node = namedtuple('Node', ['name', 'start_byte', 'end_byte'])
+                            parent_node = Node(parentClassName[0], parentClassName[1], parentClassName[2])
+                            child_node = Node(className[0], className[1], className[2])
+                            if is_child_of(child_node, parent_node):
+                                if parentClassName[0].rsplit('.', 1)[0] == className[0].rsplit('.', 1)[0]:
+                                    list_of_imports_to_remove.append(_import)
+        for _import in list_of_imports_to_remove:
+            imports.remove(_import)
+            break
+        
+
         for name in packages:
             className = pathlib.Path(path).name.replace(".java", "")
             if className in packages[name]:
@@ -222,7 +246,8 @@ def analyse(paths):
                             new_class_imports.add(class_import.replace(".*", "") + "." + cn)
                 class_imports[class_path] = new_class_imports
                 
-                new_imports = set()
+                new_imports = set()                
+                imports = imports.union(set(class_fields_access[class_path]))
                 for _import in imports:
                     is_imported = False
 
@@ -234,11 +259,13 @@ def analyse(paths):
                     if not is_imported:
                         if _import in packages[name]:
                             new_imports.add(name + "." + _import)
-                        else:
+                        elif _import[0].isupper():
                             new_imports.add("java.lang." + _import)
+                        else:
+                            new_imports.add(_import)
                             
                 dependencies[class_path] = list(new_imports)
-                dependencies[class_path].extend(class_fields_access[class_path])
+                # dependencies[class_path].extend(class_fields_access[class_path])
                 break
 
     return dependencies, fields, methods, classes
@@ -247,6 +274,16 @@ def analyse(paths):
 def draw_graph(dependencies, fields, methods, classes):
     # Generates a class diagram using the extracted information and pydot.
 
+    nested_classes = []
+    for value1 in classes:
+        for value2 in classes:
+            if value1 != value2 and value1[0].rsplit('.', 1)[0] == value2[0].rsplit('.', 1)[0]:
+                Node = namedtuple('Node', ['name', 'start_byte', 'end_byte'])
+                node1 = Node(value1[0], value1[1], value1[2])
+                node2 = Node(value2[0], value2[1], value2[2])
+                if is_child_of(node1, node2):
+                    nested_classes.append((value1[0], value2[0]))
+    
     # Create a new UML diagram
     uml_diagram = pydot.Dot(graph_type='digraph', rankdir='TB')
 
@@ -264,7 +301,17 @@ def draw_graph(dependencies, fields, methods, classes):
     for class_name in all_classes:
         # Create classes
         # Add attributes and methods to classes
-        label = "<" + class_name + "<br align='left'/>--------<br/>"
+        label = ""
+        nested_class_found = False
+        for nested_class in nested_classes:
+            if nested_class[0] == class_name:
+                nested_class_name = nested_class[0].rsplit('.', 1)[-1]
+                nested_class_name = nested_class[1] + '.' + nested_class_name
+                label += "<" + nested_class_name + "<br align='left'/>--------<br/>"
+                nested_class_found = True
+                break
+        if not nested_class_found:
+            label += "<" + class_name + "<br align='left'/>--------<br/>"
         if class_name in fields:
             for field in fields[class_name]:
                 label += "+ " + field + "<br align='left'/>"
@@ -288,6 +335,10 @@ def draw_graph(dependencies, fields, methods, classes):
             # Create associations between classes
             association = pydot.Edge(pydot_classes[key], pydot_classes[value])
             uml_diagram.add_edge(association)
+
+    for nested_class in nested_classes:
+        association = pydot.Edge(pydot_classes[nested_class[0]], pydot_classes[nested_class[1]])
+        uml_diagram.add_edge(association)
 
     # Save the diagram to a file
     uml_diagram.write_png("class_diagram.png")
