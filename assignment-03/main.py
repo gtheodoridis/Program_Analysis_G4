@@ -2,18 +2,17 @@ import json
 import glob
 import subprocess
 import pydot
-import pathlib
 from collections import namedtuple
 
 
 def get_paths(folder_path):
-    #This function takes a folder path as input and uses glob.glob to recursively find all JSON files within the specified folder and its subdirectories. It returns a list of file paths.
+    # This function takes a folder path as input and uses glob.glob to recursively find all JSON files within the specified folder and its subdirectories. It returns a list of file paths.
     return glob.glob(folder_path + '/**/*.json', recursive = True)
 
 def find_keys(json_obj, depedencies=None, interfaces=None, fields=None, methods=None, compositions=None):
-    #This function recursively traverses a JSON object representing Java class information and extracts various details, including dependencies, interfaces, fields, methods, and compositions.
-    #It uses a set to keep track of each type of information.
-    #The function handles nested structures within the JSON, such as inner classes and their relationships.
+    # This function recursively traverses a JSON object representing Java class information and extracts various details, including dependencies, interfaces, fields, methods, and compositions.
+    # It uses a set to keep track of each type of information.
+    # The function handles nested structures within the JSON, such as inner classes and their relationships.
     if depedencies is None:
         depedencies = set()
     if interfaces is None:
@@ -39,30 +38,39 @@ def find_keys(json_obj, depedencies=None, interfaces=None, fields=None, methods=
             # Fields
             if key == "fields":
                 for field in value:
-                    string = "- "
-                    if "public" in field["access"]:
-                        string = "+ "
-                    string += field["name"] + ": "
-                    if "name" in field["type"]:
-                        string += field["type"]["name"].split("/")[-1]
-                    else:
-                        string += field["type"]["base"]
-                    fields.add(string)
+                    try:
+                        string = "- "
+                        if "access" in field and field["access"]:
+                            if "public" in field["access"]:
+                                string = "+ "
+                        string += field["name"] + ": "
+                        if "name" in field["type"]:
+                            string += field["type"]["name"].split("/")[-1]
+                        else:
+                            if "base" in field["type"]:
+                                string += field["type"]["base"]
+                        fields.add(string)
+                    except:
+                        pass
             # Methods
             if key == "methods":
                 for method in value:
-                    string = "- "
-                    if "public" in method["access"]:
-                        string = "+ "
-                    string += method["name"] + "(): "
-                    if method["returns"]["type"]:
-                        if "name" in method["returns"]["type"]:
-                            string += method["returns"]["type"]["name"].split("/")[-1]
+                    try:
+                        string = "- "
+                        if "public" in method["access"]:
+                            string = "+ "
+                        string += method["name"] + "(): "
+                        if method["returns"]["type"]:
+                            if "name" in method["returns"]["type"]:
+                                string += method["returns"]["type"]["name"].split("/")[-1]
+                            else:
+                                if "base" in method["returns"]["type"]:
+                                    string += method["returns"]["type"]["base"]
                         else:
-                            string += method["returns"]["type"]["base"]
-                    else:
-                        string += "void"
-                    methods.add(string)
+                            string += "void"
+                        methods.add(string)
+                    except:
+                        pass
             # Compositions
             if key == "innerclasses":
                 for composition in value:
@@ -76,7 +84,7 @@ def find_keys(json_obj, depedencies=None, interfaces=None, fields=None, methods=
     return depedencies, interfaces, fields, methods, compositions
 
 def analyse_bytecode(folder_path):
-    #This function analyzes Java bytecode files (.class) using the jvm2json tool. It takes a folder path as input, finds all .class files in the specified folder and its subdirectories, and then uses the subprocess module to run the jvm2json tool to convert each .class file into a corresponding JSON file (.json).
+    # This function analyzes Java bytecode files (.class) using the jvm2json tool. It takes a folder path as input, finds all .class files in the specified folder and its subdirectories, and then uses the subprocess module to run the jvm2json tool to convert each .class file into a corresponding JSON file (.json).
     class_files = glob.glob(folder_path + '/**/*.class', recursive=True)
     for class_file in class_files:
         json_file = class_file.replace('.class', '.json')
@@ -114,38 +122,41 @@ def draw_graph(classes):
         class_node = pydot.Node(class_name, shape="rectangle", label=label)
 
         # Add classes to the diagram
-        uml_diagram.add_node(class_node)
-        pydot_classes[class_name] = class_node
+        if class_node:
+            uml_diagram.add_node(class_node)
+            pydot_classes[class_name] = class_node
 
     for class_name, class_details in classes.items():
         if 'depedencies' in class_details:
             for dependency in class_details['depedencies']:
                 association = pydot.Edge(pydot_classes[class_name], pydot_classes.get(dependency, dependency), arrowhead="vee")
-                uml_diagram.add_edge(association)
+                if association:
+                    uml_diagram.add_edge(association)
         
         if 'interfaces' in class_details:
             for interface in class_details['interfaces']:
                 association = pydot.Edge(pydot_classes[class_name], pydot_classes.get(interface, interface), arrowhead="onormal")
-                uml_diagram.add_edge(association)
+                if association:
+                    uml_diagram.add_edge(association)
         
         if 'compositions' in class_details:
             for composition in class_details['compositions']:
                 association = pydot.Edge(pydot_classes[class_name], pydot_classes.get(composition, composition), arrowhead="diamond")
-                uml_diagram.add_edge(association)
+                if association:
+                    uml_diagram.add_edge(association)
 
     # Save the diagram to a file
     uml_diagram.write_png("class_diagram.png")
 
 
 def main():
-    folder_path = "../course-02242-examples/src/dependencies/java/"
+    folder_path = "../jpf-core-master/jpf-core-master/build/main/gov/nasa/jpf/search"
     analyse_bytecode(folder_path)
     paths = get_paths(folder_path)
     classes = {}
     for path in paths:
         with open(path, 'r') as file:
             json_obj = json.load(file)
-            # class_name = pathlib.Path(path).name.replace(".json", "")
             class_name = path[len(folder_path):].replace(".json", "")
             depedencies, interfaces, fields, methods, compositions = find_keys(json_obj)
             depedencies = depedencies - compositions
@@ -161,7 +172,10 @@ def main():
             classes[class_name]['methods'] = methods
             classes[class_name]['compositions'] = compositions
             
-            # print(path, depedencies, interfaces, fields, methods, compositions)
+    for key in classes.keys():
+        for key2 in classes[key].keys():
+            classes[key][key2] = {x for x in classes[key][key2] if x is not None}
+    
     print(classes)
     draw_graph(classes)
 
