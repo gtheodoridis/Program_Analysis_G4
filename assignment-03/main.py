@@ -95,11 +95,11 @@ def analyse_bytecode(folder_path):
         ]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-def draw_graph(classes):
+def draw_graph(classes, two_rows=False):
     # Generates a class diagram using the extracted information and pydot.
 
     # Create a new UML diagram
-    uml_diagram = pydot.Dot(graph_type='digraph', rankdir='TB')
+    uml_diagram = pydot.Dot(graph_type='digraph', engine='neato', dpi=300)
 
     pydot_classes = {}
 
@@ -145,8 +145,16 @@ def draw_graph(classes):
                 if association:
                     uml_diagram.add_edge(association)
 
+    if not two_rows:
+        # Adding invisible edges to distribute nodes more evenly
+        class_names = list(pydot_classes.keys())
+        for i in range(len(class_names)-1):
+            invisible_edge = pydot.Edge(pydot_classes[class_names[i]], pydot_classes[class_names[i+1]], weight=1, style="invis")
+            uml_diagram.add_edge(invisible_edge)
+
     # Save the diagram to a file
     uml_diagram.write_png("class_diagram.png")
+    uml_diagram.write_svg("class_diagram.svg")
 
 
 def main():
@@ -177,7 +185,7 @@ def main():
             classes[key][key2] = {x for x in classes[key][key2] if x is not None}
     
     print(classes)
-    draw_graph(classes)
+    draw_graph(classes, two_rows=True)
 
 
 if __name__ == "__main__":
