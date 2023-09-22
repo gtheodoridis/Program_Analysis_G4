@@ -12,17 +12,27 @@ class Interpreter:
         self.stack.append(f)
         self.log_start()
         self.log_state()
-        while self.step():
+        while True:
+            end_of_program, return_value = self.step()
             self.log_state()
+            if return_value != None:
+                print("Program Printing: ", return_value)
+            if end_of_program:
+                break
         self.log_done()
 
     def step(self):
+        if len(self.stack) == 0:
+            return True, None
         (l, s, pc) = self.stack[-1]
+        if pc >= len(self.program['bytecode']):
+            return True, None
         b = self.program['bytecode'][pc]
+        print("Executing: ", b)
         if hasattr(self, "_"+b["opr"]):
-            return getattr(self, "_"+b["opr"])(b)
+            return False, getattr(self, "_"+b["opr"])(b)
         else:
-            return False
+            return True, None
     
     def log_start(self):
         if self.verbose:
@@ -38,12 +48,29 @@ class Interpreter:
             print("Memory: ", self.memory)
 
     def _return(self, b):
-        (l, s, pc) = self.stack.pop(-1)
-        if len(self.stack) == 1:
-            self.stack.append((l, s[:-1], pc + 1))
-            return False
-        else:
-            return False
+        (l, os, pc) = self.stack.pop(-1)
+        if b["type"] == None:
+            # self.stack.append((l, os[:-1], pc + 1))
+            return None
+        elif b["type"] == "int":
+            # self.stack.append((l, os[:-1], pc + 1))
+            return os[-1]
+        
+    def _push(self, b):
+        (l, os, pc) = self.stack.pop(-1)
+        value = b["value"]
+        self.stack.append((l, os + [value["value"]], pc + 1))
+
+    def _load(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        value = lv[b["index"]]
+        self.stack.append((lv, os + [value], pc + 1))
+
+    def _binary(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        if b["operant"] == "add":
+            value = os[-2] + os[-1]
+        self.stack.append((lv, os[:-2] + [value], pc + 1))
 
 
 def get_function_bytecode(json_obj):
@@ -69,8 +96,8 @@ def main():
         json_obj = json.load(file)
         byte_codes = get_functions(json_obj)
 
-        interpret = Interpreter(byte_codes['noop'], True)
-        (l, s, pc) = [], [], 0
+        interpret = Interpreter(byte_codes['add'], True)
+        (l, s, pc) = [5, 6], [], 0
         interpret.run((l, s, pc))
 
 if __name__ == "__main__":
