@@ -1,4 +1,7 @@
 import json
+import glob
+import subprocess
+import pathlib
 
 class Comparison:
     def _eq(a, b):
@@ -25,6 +28,22 @@ class Comparison:
     def _isnot(a, b):
         return a is not b
     
+class ArithmaticOperation:
+    def _add(a, b):
+        return a + b
+    
+    def _mul(a, b):
+        return a + b
+    
+    def _sub(a, b):
+        return a - b
+    
+    def _div(a, b):
+        return a // b
+    
+    def _mod(a, b):
+        return a % b
+    
 class JavaMethod:
     def __init__(self):
         pass
@@ -47,8 +66,6 @@ class JavaMethod:
 
 
 class Interpreter:
-
-
     def __init__(self, program, verbose, avail_programs):
         self.program = program
         self.verbose = verbose
@@ -75,10 +92,9 @@ class Interpreter:
         if len(self.stack) == 0:
             return True, None
         (l, s, pc) = self.stack[-1]
-        # if pc >= len(self.program['bytecode']):
-        #     return True, None
         b = self.program['bytecode'][pc]
-        print("Executing: ", b)
+        if self.verbose:
+            print("Executing: ", b)
         if hasattr(self, "_"+b["opr"]):
             return False, getattr(self, "_"+b["opr"])(b)
         else:
@@ -100,13 +116,9 @@ class Interpreter:
 
     def _return(self, b):
         (l, os, pc) = self.stack.pop(-1)
-        # (l_p, os_p, pc_p) = self.stack.pop(-1)
         if b["type"] == None:
-            # self.stack.append((l, os[:-1], pc + 1))
             return None
         elif b["type"] == "int":
-            # self.stack.append((l, os[:-1], pc + 1))
-            # self.stack.append((l_p, os_p + [os[-1]], pc_p+1))
             return os[-1]
         
     def _push(self, b):
@@ -117,27 +129,15 @@ class Interpreter:
     def _load(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         if b["type"] == "ref":
-            # value = self.memory[lv[b["index"]]]
             value = lv[b["index"]]
-            # lv = lv[:b["index"]] + lv[b["index"] + 1:]
             self.stack.append((lv, os + [value], pc + 1))
         else:
             value = lv[b["index"]]
-            # lv = lv[:b["index"]] + lv[b["index"] + 1:]
             self.stack.append((lv, os + [value], pc + 1))
 
     def _binary(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        if b["operant"] == "add":
-            value = os[-2] + os[-1]
-        elif b["operant"] == "mul":
-            value = os[-2] * os[-1]
-        elif b["operant"] == "sub":
-            value = os[-2] - os[-1]
-        elif b["operant"] == "div":
-            value = os[-2] // os[-1]
-        elif b["operant"] == "mod":
-            value = os[-2] % os[-1]
+        value = getattr(ArithmaticOperation, "_"+b["operant"])(os[-2], os[-1])
         self.stack.append((lv, os[:-2] + [value], pc + 1))
 
     def _if(self, b):
@@ -181,7 +181,6 @@ class Interpreter:
     def _get(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         value = getattr(JavaMethod, "_get")(b["field"])
-        print(value)
         self.stack.append((lv, os + [value], pc + 1))
 
     def _invoke(self, b):
@@ -195,12 +194,9 @@ class Interpreter:
             else:
                 raise Exception
         except:
-            print(self.avail_programs[b["method"]["name"]])
             interpret = Interpreter(self.avail_programs[b["method"]["name"]], True, self.avail_programs)
             (l_new, s_new, pc_new) = os[-arg_num:], [], 0
-            print((l_new, s_new, pc_new))
             ret = interpret.run((l_new, s_new, pc_new))
-            print("returned from function: ", ret)
             self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
     def _array_load(self, b):
@@ -252,15 +248,31 @@ def get_functions(json_obj):
         functions[func['name']] = get_function_bytecode(func)
     return functions
 
+def analyse_bytecode(folder_path, target_folder_path):
+    # This function analyzes Java bytecode files (.class) using the jvm2json tool. It takes a folder path as input, finds all .class files in the specified folder and its subdirectories, and then uses the subprocess module to run the jvm2json tool to convert each .class file into a corresponding JSON file (.json).
+    class_files = glob.glob(folder_path + '/**/*.class', recursive=True)
+    for class_file in class_files:
+        json_file = pathlib.Path(class_file).name
+        json_file = json_file.replace('.class', '.json')
+        command = [
+            "jvm2json",
+            "-s", class_file,
+            "-t", target_folder_path+json_file
+        ]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 # def main():
+#     folder_path = "../course-02242-examples/src/executables/java/dtu/compute/exec"
+#     folder_path_target = "../course-02242-examples/decompiled/dtu/compute/exec/"
+#     analyse_bytecode(folder_path, folder_path_target)
 #     file_path = "../course-02242-examples/decompiled/dtu/compute/exec/Array.json"
 #     with open(file_path, 'r') as file:
 #         json_obj = json.load(file)
 #         byte_codes = get_functions(json_obj)
 
-#         interpret = Interpreter(byte_codes['newArrayOutOfBounds'], True, byte_codes)
+#         interpret = Interpreter(byte_codes['bubbleSort'], True, byte_codes)
 #         (l, s, pc) = [0], [], 0
-#         interpret.memory = [[i for i in range(10, 0, -1)]]
+#         interpret.memory = [[5,7,1,4,2]]
 #         ret = interpret.run((l, s, pc))
         
 

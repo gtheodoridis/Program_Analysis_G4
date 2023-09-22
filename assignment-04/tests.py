@@ -4,6 +4,8 @@ import random
 import sys
 import math
 import glob
+import subprocess
+import pathlib
 import sympy
 
 from main import Interpreter
@@ -29,17 +31,31 @@ def before_tests():
                 continue
             functions[func['name']] = get_function_bytecode(func)
         return functions
+    
+    def analyse_bytecode(folder_path, target_folder_path):
+        # This function analyzes Java bytecode files (.class) using the jvm2json tool. It takes a folder path as input, finds all .class files in the specified folder and its subdirectories, and then uses the subprocess module to run the jvm2json tool to convert each .class file into a corresponding JSON file (.json).
+        class_files = glob.glob(folder_path + '/**/*.class', recursive=True)
+        for class_file in class_files:
+            json_file = pathlib.Path(class_file).name
+            json_file = json_file.replace('.class', '.json')
+            command = [
+                "jvm2json",
+                "-s", class_file,
+                "-t", target_folder_path+json_file
+            ]
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     
     global byte_codes
+    folder_path_class_files = "../course-02242-examples/src/executables/java/dtu/compute/exec"
     folder_path = "../course-02242-examples/decompiled/dtu/compute/exec/"
+    analyse_bytecode(folder_path_class_files, folder_path)
     files = get_paths(folder_path)
     byte_codes = {}
     for file_path in files:
         with open(file_path, 'r') as file:
             json_obj = json.load(file)
             byte_codes.update(get_functions(json_obj))
-            print(byte_codes.keys())
 
 def test_noop():
     interpret = Interpreter(byte_codes['noop'], False, byte_codes)
