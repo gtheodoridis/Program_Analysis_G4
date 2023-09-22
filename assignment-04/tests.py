@@ -95,3 +95,31 @@ def test_fib():
     test_int = random.randint(0, 25)
     (l, s, pc) = [test_int], [], 0
     assert sympy.fibonacci(test_int+1) == interpret.run((l, s, pc))
+
+def test_first():
+    interpret = Interpreter(byte_codes['first'], False, byte_codes)
+    test_arr = [random.randint(0, 25) for i in range(random.randint(0, 25))]
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [test_arr]
+    assert test_arr[0] == interpret.run((l, s, pc))
+
+def test_access():
+    interpret = Interpreter(byte_codes['access'], False, byte_codes)
+    test_arr = [random.randint(0, 25) for i in range(random.randint(0, 25))]
+    test_int = random.randint(0, len(test_arr))
+    (l, s, pc) = [test_int, 0], [], 0
+    interpret.memory = [test_arr]
+    assert test_arr[test_int] == interpret.run((l, s, pc))
+
+def test_newArray():
+    interpret = Interpreter(byte_codes['newArray'], False, byte_codes)
+    (l, s, pc) = [], [], 0
+    assert 1 == interpret.run((l, s, pc))
+
+def test_bubbleSort():
+    interpret = Interpreter(byte_codes['bubbleSort'], False, byte_codes)
+    test_arr = [random.randint(0, 25) for i in range(random.randint(0, 25))]
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [test_arr]
+    interpret.run((l, s, pc))
+    assert sorted(test_arr) == interpret.memory[0]

@@ -53,7 +53,7 @@ class Interpreter:
         self.program = program
         self.verbose = verbose
         self.avail_programs = avail_programs
-        self.memory = {}
+        self.memory = []
         self.stack = []
 
     def run(self, f):
@@ -116,9 +116,15 @@ class Interpreter:
 
     def _load(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        value = lv[b["index"]]
-        # lv = lv[:b["index"]] + lv[b["index"] + 1:]
-        self.stack.append((lv, os + [value], pc + 1))
+        if b["type"] == "ref":
+            # value = self.memory[lv[b["index"]]]
+            value = lv[b["index"]]
+            # lv = lv[:b["index"]] + lv[b["index"] + 1:]
+            self.stack.append((lv, os + [value], pc + 1))
+        else:
+            value = lv[b["index"]]
+            # lv = lv[:b["index"]] + lv[b["index"] + 1:]
+            self.stack.append((lv, os + [value], pc + 1))
 
     def _binary(self, b):
         (lv, os, pc) = self.stack.pop(-1)
@@ -161,7 +167,6 @@ class Interpreter:
         (lv, os, pc) = self.stack.pop(-1)
         condition = getattr(Comparison, "_"+b["condition"])(os[-1], 0)
         if condition:
-            print(b["target"])
             pc = b["target"]
         else:
             pc = pc + 1
@@ -198,6 +203,39 @@ class Interpreter:
             print("returned from function: ", ret)
             self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
+    def _array_load(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        index_el = os[-1]
+        index_array = os[-2]
+        value = self.memory[index_array][index_el]
+        self.stack.append((lv, os[:-2] + [value], pc + 1))
+
+    def _array_store(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        value = os[-1]
+        index_of_array = os[-3]
+        index_of_el = os[-2]
+        if len(self.memory[index_of_array]) <= index_of_el:
+            self.memory[index_of_array].append(value)
+        else:
+            self.memory[index_of_array][index_of_el] = value
+        self.stack.append((lv, os[:-3], pc + 1))
+
+    def _newarray(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        self.memory.append([])
+        self.stack.append((lv, os + [len(self.memory)-1], pc + 1))
+    
+    def _dup(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        self.stack.append((lv, os + os[-b["words"]:], pc + 1))
+
+    def _arraylength(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        index_array = os[-1]
+        value = len(self.memory[index_array])
+        self.stack.append((lv, os[:-1] + [value], pc + 1))    
+
 def get_function_bytecode(json_obj):
     return json_obj['code']
 
@@ -214,16 +252,17 @@ def get_functions(json_obj):
         functions[func['name']] = get_function_bytecode(func)
     return functions
 
-def main():
-    file_path = "../course-02242-examples/decompiled/dtu/compute/exec/Calls.json"
-    with open(file_path, 'r') as file:
-        json_obj = json.load(file)
-        byte_codes = get_functions(json_obj)
+# def main():
+#     file_path = "../course-02242-examples/decompiled/dtu/compute/exec/Array.json"
+#     with open(file_path, 'r') as file:
+#         json_obj = json.load(file)
+#         byte_codes = get_functions(json_obj)
 
-        interpret = Interpreter(byte_codes['fib'], True, byte_codes)
-        (l, s, pc) = [10], [], 0
-        ret = interpret.run((l, s, pc))
+#         interpret = Interpreter(byte_codes['newArrayOutOfBounds'], True, byte_codes)
+#         (l, s, pc) = [0], [], 0
+#         interpret.memory = [[i for i in range(10, 0, -1)]]
+#         ret = interpret.run((l, s, pc))
         
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
