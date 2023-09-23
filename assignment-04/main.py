@@ -33,7 +33,7 @@ class ArithmaticOperation:
         return a + b
     
     def _mul(a, b):
-        return a + b
+        return a * b
     
     def _sub(a, b):
         return a - b
@@ -81,7 +81,7 @@ class Interpreter:
             end_of_program, return_value = self.step()
             self.log_state()
             if return_value != None:
-                print("Program Printing: ", return_value)
+                print("Program Returning: ", return_value)
                 return return_value
             if end_of_program:
                 break
@@ -188,16 +188,35 @@ class Interpreter:
         arg_num = len(b["method"]["args"])
 
         try:
-            if b["method"]["ref"]["name"] == os[-arg_num-1]:
-                value = getattr(JavaMethod, "_" + b["method"]["name"])(*os[-arg_num:])
-                self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
+            if hasattr(JavaMethod, "_" + b["method"]["name"]):
+                if arg_num == 0:
+                    value = getattr(JavaMethod, "_" + b["method"]["name"])([])
+                else:    
+                    value = getattr(JavaMethod, "_" + b["method"]["name"])(*os[-arg_num:])
+                if b["access"] != "dynamic":
+                    if b["method"]["ref"]["name"] == os[-arg_num-1]:
+                        self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
+                    else:
+                        raise Exception
             else:
                 raise Exception
         except:
-            interpret = Interpreter(self.avail_programs[b["method"]["name"]], True, self.avail_programs)
-            (l_new, s_new, pc_new) = os[-arg_num:], [], 0
+            interpret = Interpreter(self.avail_programs[b["method"]["name"]], self.verbose, self.avail_programs)
+            if arg_num == 0:
+                (l_new, s_new, pc_new) = [], [], 0
+            else:
+                (l_new, s_new, pc_new) = os[-arg_num:], [], 0
             ret = interpret.run((l_new, s_new, pc_new))
-            self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
+            if b["method"]["returns"] == None:
+                if arg_num == 0:
+                    self.stack.append((lv, os, pc + 1))
+                else:
+                    self.stack.append((lv, os[:-arg_num], pc + 1))
+            else:
+                if arg_num == 0:
+                    self.stack.append((lv, os + [ret], pc + 1))
+                else:
+                    self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
     def _array_load(self, b):
         (lv, os, pc) = self.stack.pop(-1)
@@ -265,14 +284,14 @@ def analyse_bytecode(folder_path, target_folder_path):
 #     folder_path = "../course-02242-examples/src/executables/java/dtu/compute/exec"
 #     folder_path_target = "../course-02242-examples/decompiled/dtu/compute/exec/"
 #     analyse_bytecode(folder_path, folder_path_target)
-#     file_path = "../course-02242-examples/decompiled/dtu/compute/exec/Array.json"
+#     file_path = "../course-02242-examples/decompiled/dtu/compute/exec/Simple.json"
 #     with open(file_path, 'r') as file:
 #         json_obj = json.load(file)
 #         byte_codes = get_functions(json_obj)
 
-#         interpret = Interpreter(byte_codes['bubbleSort'], True, byte_codes)
-#         (l, s, pc) = [0], [], 0
-#         interpret.memory = [[5,7,1,4,2]]
+#         interpret = Interpreter(byte_codes['main'], False, byte_codes)
+#         (l, s, pc) = [], [], 0
+#         interpret.memory = []
 #         ret = interpret.run((l, s, pc))
         
 
