@@ -2,3 +2,7 @@ assignment-02/test
 assignment-02/languages.so
 tree-sitter-java
 course-02242-examples
+.hypothesis
+.pytest_cache
+jvm2json
+__pycache__
