@@ -32,7 +32,12 @@ class AbstractRangeInterpreter(BaseInterpreter):
         # Load a value from an array
         (lv, os, pc) = self.stack.pop(-1)
         index_el = os[-1]  # Index of the element to load
+        # index_array is assumed to not be a range but an integer
         index_array = os[-2]  # Index of the array
+        if index_el < 0 or index_el >= len(self.memory[index_array]):
+            raise Exception("IndexOutOfBoundsException")
+        if index_array < 0 or index_array >= len(self.memory):
+            raise Exception("NullPointerException")
         value = self.memory[index_array][index_el]  # Get the value from memory
         self.stack.append((lv, os[:-2] + [value], pc + 1))
 
@@ -40,8 +45,13 @@ class AbstractRangeInterpreter(BaseInterpreter):
         # Store a value in an array
         (lv, os, pc) = self.stack.pop(-1)
         value = os[-1]  # Value to store
+        # index_array is assumed to not be a range but an integer
         index_of_array = os[-3]  # Index of the array to store in
         index_of_el = os[-2]  # Index of the element in the array
+        if index_of_el < 0 or index_of_el > len(self.memory[index_of_array]):
+            raise Exception("IndexOutOfBoundsException")
+        if index_of_array < 0 or index_of_array >= len(self.memory):
+            raise Exception("NullPointerException")
         if len(self.memory[index_of_array]) <= index_of_el:
             self.memory[index_of_array].append(value)  # If the array is not long enough, extend it
         else:
