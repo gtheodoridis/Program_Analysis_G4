@@ -12,6 +12,12 @@ class Interpreter(BaseInterpreter):
         self.javaMethod = JavaMethod
 
 
+    def _push(self, b):
+        (l, os, pc) = self.stack.pop(-1)
+        value = b["value"]
+        self.stack.append((l, os + [value["value"]], pc + 1))
+        
+
     def _incr(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         lv[b["index"]] = lv[b["index"]] + b["amount"]

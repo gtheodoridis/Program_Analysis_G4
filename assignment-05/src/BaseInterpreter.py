@@ -15,7 +15,10 @@ class BaseInterpreter:
         self.log_start()
         self.log_state()
         while True:
-            end_of_program, return_value = self.step()
+            try:
+                end_of_program, return_value = self.step()
+            except Exception as e:
+                print(e)
             self.log_state()
             if return_value != None:
                 print("Program Returning: ", return_value)
@@ -58,11 +61,6 @@ class BaseInterpreter:
             return None
         elif b["type"] == "int":
             return os[-1]
-        
-    def _push(self, b):
-        (l, os, pc) = self.stack.pop(-1)
-        value = b["value"]
-        self.stack.append((l, os + [value["value"]], pc + 1))
 
     def _load(self, b):
         (lv, os, pc) = self.stack.pop(-1)

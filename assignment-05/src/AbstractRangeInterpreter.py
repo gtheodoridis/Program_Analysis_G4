@@ -21,6 +21,12 @@ class AbstractRangeInterpreter(BaseInterpreter):
         self.arithmeticOperation = AbstractRangeArithmeticOperation  # Assigning the AbstractRangeArithmeticOperation class to self.arithmeticOperation
         self.javaMethod = JavaMethod  # Assigning the AbstractRangeJavaMethod class to self.javaMethod
 
+    def _push(self, b):
+        (l, os, pc) = self.stack.pop(-1)
+        value = b["value"]
+        value = RangeSet(value["value"], value["value"])  # Create a new RangeSet object with the value as both start and end
+        self.stack.append((l, os + [value], pc + 1))
+    
     def _incr(self, b):
         # Increment the value in an array by a specified amount
         (lv, os, pc) = self.stack.pop(-1)
