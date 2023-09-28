@@ -1,6 +1,6 @@
-from JavaMethod import AbstractRangeJavaMethod
+from JavaMethod import JavaMethod
 from Comparison import AbstractRangeComparison
-from ArithmeticOperation import AbstractRangeArithmeticOperation
+
 from BaseInterpreter import BaseInterpreter
 
 class RangeSet():
@@ -8,14 +8,18 @@ class RangeSet():
         self.start = start
         self.end = end
 
+    def __str__(self):
+        return "[{}, {}]".format(self.start, self.end)
+
 class AbstractRangeInterpreter(BaseInterpreter):
     def __init__(self, program, verbose, avail_programs):
         super().__init__(program, verbose, avail_programs)
 
         # Assign classes to attributes for later use
         self.comparison = AbstractRangeComparison  # Assigning the AbstractRangeComparison class to self.comparison
+        from ArithmeticOperation import AbstractRangeArithmeticOperation
         self.arithmeticOperation = AbstractRangeArithmeticOperation  # Assigning the AbstractRangeArithmeticOperation class to self.arithmeticOperation
-        self.javaMethod = AbstractRangeJavaMethod  # Assigning the AbstractRangeJavaMethod class to self.javaMethod
+        self.javaMethod = JavaMethod  # Assigning the AbstractRangeJavaMethod class to self.javaMethod
 
     def _incr(self, b):
         # Increment the value in an array by a specified amount
