@@ -8,7 +8,7 @@ def get_paths(folder_path):
 def get_function_bytecode(json_obj):
     return json_obj['code']
 
-def get_functions(json_obj):
+def get_functions(file_name, json_obj):
     functions = {}
     for func in json_obj['methods']:
         is_case = False
@@ -18,7 +18,7 @@ def get_functions(json_obj):
                 break
         if not is_case:
             continue
-        functions[func['name']] = get_function_bytecode(func)
+        functions[file_name + "_" + func['name']] = get_function_bytecode(func)
     return functions
 
 def analyse_bytecode(folder_path, target_folder_path):

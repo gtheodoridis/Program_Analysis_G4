@@ -15,10 +15,7 @@ class BaseInterpreter:
         self.log_start()
         self.log_state()
         while True:
-            try:
-                end_of_program, return_value = self.step()
-            except Exception as e:
-                print(e)
+            end_of_program, return_value = self.step()
             self.log_state()
             if return_value != None:
                 print("Program Returning: ", return_value)
