@@ -129,9 +129,17 @@ class BaseInterpreter:
             else:
                 raise Exception
         except:
-            if b["method"]["name"] not in self.avail_programs:
+            pr = None
+            for av_pr in self.avail_programs:
+                if av_pr.endswith(b["method"]["name"]):
+                    pr = av_pr
+            if not pr:
                 raise Exception("UnsupportedOperationException")
-            interpret = self.__class__(self.avail_programs[b["method"]["name"]], self.verbose, self.avail_programs)
+            
+            # if b["method"]["name"] not in self.avail_programs:
+            #     raise Exception("UnsupportedOperationException")
+
+            interpret = self.__class__(self.avail_programs[pr], self.verbose, self.avail_programs)
             if arg_num == 0:
                 (l_new, s_new, pc_new) = [], [], 0
             else:

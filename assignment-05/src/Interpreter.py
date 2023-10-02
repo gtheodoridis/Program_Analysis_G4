@@ -36,15 +36,13 @@ class Interpreter(BaseInterpreter):
         value = os[-1]
         index_of_array = os[-3]
         index_of_el = os[-2]
-        if len(self.memory[index_of_array]) <= index_of_el:
-            self.memory[index_of_array].append(value)
-        else:
-            self.memory[index_of_array][index_of_el] = value
+        self.memory[index_of_array][index_of_el] = value
         self.stack.append((lv, os[:-3], pc + 1))
 
     def _newarray(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        self.memory.append([])
+        size = os[-1]
+        self.memory.append([None]*size)
         self.stack.append((lv, os + [len(self.memory)-1], pc + 1))
     
     def _arraylength(self, b):

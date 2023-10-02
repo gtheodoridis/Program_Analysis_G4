@@ -137,3 +137,39 @@ def test_Arithmetics_speedVsPrecision():
     except Exception as e:
         assert "ArithmeticException" == str(e)
 
+def test_Arrays_alwaysThrows1():
+    flag_passed = 0
+    interpret = AbstractRangeInterpreter(byte_codes['Arrays_alwaysThrows1'], True, byte_codes)
+    (l, s, pc) = [], [], 0
+    interpret.memory = []
+    try:
+        interpret.run((l, s, pc))
+    except Exception as e:
+        flag_passed = 1
+        assert "IndexOutOfBoundsException" == str(e)
+    
+    assert flag_passed == 1
+
+def test_Arrays_alwaysThrows2():
+    flag_passed = 0
+    interpret = AbstractRangeInterpreter(byte_codes['Arrays_alwaysThrows2'], True, byte_codes)
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [[]]
+    try:
+        interpret.run((l, s, pc))
+    except Exception as e:
+        flag_passed = 1
+        assert "IndexOutOfBoundsException" == str(e)
+
+    assert flag_passed == 1
+
+def test_Arrays_alwaysThrows3():
+    flag_passed = 0
+    interpret = AbstractRangeInterpreter(byte_codes['Arrays_alwaysThrows3'], True, byte_codes)
+    (l, s, pc) = [], [], 0
+    interpret.memory = []
+    try:
+        interpret.run((l, s, pc))
+    except Exception as e:
+        flag_passed = 1
+        assert "IndexOutOfBoundsException" == str(e)
