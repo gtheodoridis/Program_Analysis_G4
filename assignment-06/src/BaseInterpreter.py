@@ -24,13 +24,12 @@ class BaseInterpreter:
             self.log_state()
             if return_value != None:
                 print("Program Returning: ", return_value)
-                return_list =[return_value]
+                return_list = [return_value]
                 for branch in self.branch_list.keys():
-                    interpret = self.__class__(self.avail_programs, self.verbose, self.avail_programs)
+                    interpret = self.__class__(self.program, self.verbose, self.avail_programs)
                     ret = interpret.run(self.branch_list[branch])
                     print("Program Returning: ", ret)
                     return_list.append(ret)
-                
                 return return_value
             if end_of_program:
                 break

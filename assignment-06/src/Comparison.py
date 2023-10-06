@@ -82,6 +82,14 @@ class AbstractRangeComparison:
         a.start = b.start + 1
         return a
     
+    def _assert_le(a, b):
+        if a.end < b.start:
+            return a
+        elif a.start > b.end:
+            raise Exception("AssertionFailed")
+        a.end = b.end
+        return a
+    
     def _assert_eq(a, b):
         if a.start > b.end:
             raise Exception("AssertionFailed")

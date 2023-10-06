@@ -1,3 +1,5 @@
+import copy
+
 from JavaMethod import JavaMethod
 from Comparison import AbstractRangeComparison
 
@@ -10,6 +12,27 @@ class RangeSet():
 
     def __str__(self):
         return "[{}, {}]".format(self.start, self.end)
+    
+
+def deep_copy_with_relationship(lv, os):
+    # Create a mapping from old objects to new objects
+    mapping = {}
+
+    lv_new = []
+    for item in lv:
+        new_item = copy.deepcopy(item)
+        lv_new.append(new_item)
+        mapping[item] = new_item
+
+    # Copy the os, ensuring relationship is retained
+    os_new = []
+    for item in os:
+        if isinstance(item, RangeSet):
+            os_new.append(mapping.get(item, copy.deepcopy(item)))
+        else:
+            os_new.append(item)
+
+    return lv_new, os_new
     
 
 class AbstractRangeInterpreter(BaseInterpreter):
@@ -101,7 +124,7 @@ class AbstractRangeInterpreter(BaseInterpreter):
         (lv, os, pc) = self.stack.pop(-1)
         condition = getattr(self.comparison, "_"+b["condition"])(os[-1], self.cast(0))
 
-
+        # TODO: after implementation of assert error this to if condition can be removed
         if "class" in self.program["bytecode"][pc+1]:
             if self.program["bytecode"][pc+1]["class"] == "java/lang/AssertionError":
                 os[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os[-1], self.cast(0))
@@ -118,12 +141,15 @@ class AbstractRangeInterpreter(BaseInterpreter):
                 else:
                     pc = pc + 1
             else:
-                print("ADDING A BRANCH")
+                # branch that will be analysed later
                 # deep copy of local variables and change using os[-1] the new copy not the old one
-                # os[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os[-1], self.cast(0))
-                self.branch_list[pc] = (lv_copy, os[:-1], b["target"])
-                os[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os[-1], self.cast(0))
-                pc = pc+1
+                lv_copy, os_copy = deep_copy_with_relationship(lv, os)
+                os_copy[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os_copy[-1], self.cast(0))
+                self.branch_list[pc] = (lv_copy, os_copy[:-1], b["target"])
+                # branch that will be analysed now
+                opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
+                os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
+                pc = pc + 1
 
 
         self.stack.append((lv, os[:-1], pc))
