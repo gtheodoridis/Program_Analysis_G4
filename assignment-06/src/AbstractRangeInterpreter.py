@@ -125,31 +125,31 @@ class AbstractRangeInterpreter(BaseInterpreter):
         condition = getattr(self.comparison, "_"+b["condition"])(os[-1], self.cast(0))
 
         # TODO: after implementation of assert error this to if condition can be removed
-        if "class" in self.program["bytecode"][pc+1]:
-            if self.program["bytecode"][pc+1]["class"] == "java/lang/AssertionError":
-                os[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os[-1], self.cast(0))
+        # if "class" in self.program["bytecode"][pc+1]:
+        #     if self.program["bytecode"][pc+1]["class"] == "java/lang/AssertionError":
+        #         os[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os[-1], self.cast(0))
+        #         pc = b["target"]
+        # elif "class" in self.program["bytecode"][b["target"]]:
+        #     if self.program["bytecode"][b["target"]]["class"] == "java/lang/AssertionError":
+        #         opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
+        #         os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
+        #         pc = pc + 1
+        # else:
+        if condition != "Maybe":
+            if condition:
                 pc = b["target"]
-        elif "class" in self.program["bytecode"][b["target"]]:
-            if self.program["bytecode"][b["target"]]["class"] == "java/lang/AssertionError":
-                opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
-                os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
+            else:
                 pc = pc + 1
         else:
-            if condition != "Maybe":
-                if condition:
-                    pc = b["target"]
-                else:
-                    pc = pc + 1
-            else:
-                # branch that will be analysed later
-                # deep copy of local variables and change using os[-1] the new copy not the old one
-                lv_copy, os_copy = deep_copy_with_relationship(lv, os)
-                os_copy[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os_copy[-1], self.cast(0))
-                self.branch_list[pc] = (lv_copy, os_copy[:-1], b["target"])
-                # branch that will be analysed now
-                opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
-                os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
-                pc = pc + 1
+            # branch that will be analysed later
+            # deep copy of local variables and change using os[-1] the new copy not the old one
+            lv_copy, os_copy = deep_copy_with_relationship(lv, os)
+            os_copy[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os_copy[-1], self.cast(0))
+            self.branch_list[pc] = (lv_copy, os_copy[:-1], b["target"])
+            # branch that will be analysed now
+            opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
+            os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
+            pc = pc + 1
 
 
         self.stack.append((lv, os[:-1], pc))

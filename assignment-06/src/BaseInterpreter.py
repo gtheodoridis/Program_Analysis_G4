@@ -135,11 +135,13 @@ class BaseInterpreter:
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
                 else:    
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])(*os[-arg_num:])
-                if b["access"] != "dynamic":
+                if b["access"] == "static":
                     if b["method"]["ref"]["name"] == os[-arg_num-1]:
                         self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
                     else:
                         raise Exception
+            elif b["access"] == "special" and b["method"]["ref"]["name"] == "java/lang/AssertionError":
+                    self.stack = []
             else:
                 raise Exception
         except:
@@ -173,6 +175,11 @@ class BaseInterpreter:
     def _dup(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         self.stack.append((lv, os + os[-b["words"]:], pc + 1))
+
+    # TODO: classes are not implemented yet
+    def _new(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        self.stack.append((lv, os, pc + 1))
 
     def _array_load(self, b):
         pass
