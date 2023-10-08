@@ -28,10 +28,10 @@ class RangeSet():
 
     @start.setter
     def start(self, value):
-        if value <= self.MAX_VALUE:
+        if value >= -1 * self.MAX_VALUE:
             self._start = value
         else:
-            self._start = self.MAX_VALUE
+            self._start = float('-inf')
 
     @property
     def end(self):
@@ -42,7 +42,7 @@ class RangeSet():
         if value <= self.MAX_VALUE:
             self._end = value
         else:
-            self._end = self.MAX_VALUE
+            self._end = float('inf')
 
     def __str__(self):
         return "[{}, {}]".format(self.start, self.end)
@@ -92,8 +92,8 @@ class AbstractRangeInterpreter(BaseInterpreter):
     
     def wide(self, value1, value2):
         return RangeSet(
-            -1 * RangeSet.MAX_VALUE if (min(value1.start, value2.start) < (-1 * RangeSet.MAX_VALUE/10)) else min(value1.start, value2.start),
-            RangeSet.MAX_VALUE if (max(value1.end, value2.end) > (RangeSet.MAX_VALUE/10)) else max(value1.end, value2.end),
+            float('-inf') if (min(value1.start, value2.start) < (-1 * RangeSet.MAX_VALUE)) else min(value1.start, value2.start),
+            float('inf') if (max(value1.end, value2.end) > (RangeSet.MAX_VALUE)) else max(value1.end, value2.end),
         )
     
     def merge(self, old_s, new_s):
