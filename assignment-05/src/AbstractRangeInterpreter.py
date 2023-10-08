@@ -1,3 +1,5 @@
+import copy
+
 from JavaMethod import JavaMethod
 from Comparison import AbstractRangeComparison
 
@@ -10,6 +12,31 @@ class RangeSet():
 
     def __str__(self):
         return "[{}, {}]".format(self.start, self.end)
+    
+    def __repr__(self):
+        return self.__str__()
+    
+
+def deep_copy_with_relationship(lv, os):
+    # Create a mapping from old objects to new objects
+    mapping = {}
+
+    lv_new = []
+    for item in lv:
+        new_item = copy.deepcopy(item)
+        lv_new.append(new_item)
+        mapping[item] = new_item
+
+    # Copy the os, ensuring relationship is retained
+    os_new = []
+    for item in os:
+        if isinstance(item, RangeSet):
+            os_new.append(mapping.get(item, copy.deepcopy(item)))
+        else:
+            os_new.append(item)
+
+    return lv_new, os_new
+    
 
 class AbstractRangeInterpreter(BaseInterpreter):
     def __init__(self, program, verbose, avail_programs):
@@ -20,6 +47,12 @@ class AbstractRangeInterpreter(BaseInterpreter):
         from ArithmeticOperation import AbstractRangeArithmeticOperation
         self.arithmeticOperation = AbstractRangeArithmeticOperation  # Assigning the AbstractRangeArithmeticOperation class to self.arithmeticOperation
         self.javaMethod = JavaMethod  # Assigning the AbstractRangeJavaMethod class to self.javaMethod
+
+
+    def cast(self, i):
+        if type(i) == RangeSet:
+            return i
+        return RangeSet(i, i)
 
     def _push(self, b):
         (l, os, pc) = self.stack.pop(-1)
@@ -90,11 +123,54 @@ class AbstractRangeInterpreter(BaseInterpreter):
         value = len(self.memory[index_array])  # Get the length of the array in memory
         self.stack.append((lv, os[:-1] + [value], pc + 1))
 
-    def _ifz(self, b): # maybe we remove later
+    def _ifz(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        condition = getattr(self.comparison, "_"+b["condition"])(os[-1], RangeSet(0, 0))
-        if condition:
-            pc = b["target"]
+        condition = getattr(self.comparison, "_"+b["condition"])(os[-1], self.cast(0))
+
+        if condition != "Maybe":
+            if condition:
+                pc = b["target"]
+            else:
+                pc = pc + 1
         else:
+            # branch that will be analysed later
+            # deep copy of local variables and change using os[-1] the new copy not the old one
+            lv_copy, os_copy = deep_copy_with_relationship(lv, os)
+            os_copy[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os_copy[-1], self.cast(0))
+            self.branch_list[pc] = (lv_copy, os_copy[:-1], b["target"])
+            # branch that will be analysed now
+            opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
+            os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-1], self.cast(0))
             pc = pc + 1
+
+
         self.stack.append((lv, os[:-1], pc))
+
+    def _if(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        condition = getattr(self.comparison, "_"+b["condition"])(os[-2], os[-1])
+
+        if condition != "Maybe":
+            if condition:
+                pc = b["target"]
+            else:
+                pc = pc + 1
+        else:
+            # branch that will be analysed later
+            # deep copy of local variables and change using os[-1] the new copy not the old one
+            lv_copy, os_copy = deep_copy_with_relationship(lv, os)
+            os_copy[-1] = getattr(self.comparison, "_assert_"+b["condition"])(os_copy[-2], os_copy[-1])
+            self.branch_list[pc] = (lv_copy, os_copy[:-1], b["target"])
+            # branch that will be analysed now
+            opp = self.comparison._opposite(getattr(self.comparison, "_"+b["condition"]))
+            os[-1] = getattr(self.comparison, "_assert_"+opp)(os[-2], os[-1])
+            pc = pc + 1
+
+
+        self.stack.append((lv, os[:-1], pc))
+
+    def _negate(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        os[-1].start = -os[-1].end 
+        os[-1].end = -os[-1].start 
+        self.stack.append((lv, os, pc + 1))

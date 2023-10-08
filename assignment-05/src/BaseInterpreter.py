@@ -5,10 +5,15 @@ class BaseInterpreter:
         self.avail_programs = avail_programs
         self.memory = []
         self.stack = []
+                
+        self.branch_list = {}
 
         self.comparison = None
         self.arithmeticOperation = None
         self.javaMethod = None
+    
+    def cast(self, i):
+        return i
 
     def run(self, f):
         self.stack.append(f)
@@ -19,6 +24,12 @@ class BaseInterpreter:
             self.log_state()
             if return_value != None:
                 print("Program Returning: ", return_value)
+                return_list = [return_value]
+                for branch in self.branch_list.keys():
+                    interpret = self.__class__(self.program, self.verbose, self.avail_programs)
+                    ret = interpret.run(self.branch_list[branch])
+                    print("Program Returning: ", ret)
+                    return_list.append(ret)
                 return return_value
             if end_of_program:
                 break
@@ -108,7 +119,10 @@ class BaseInterpreter:
         
     def _get(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        value = getattr(self.javaMethod, "_get")(b["field"])
+        if b["field"]["name"] == '$assertionsDisabled':
+            value = self.cast(0)
+        else:
+            value = getattr(self.javaMethod, "_get")(b["field"])
         self.stack.append((lv, os + [value], pc + 1))
 
     def _invoke(self, b):
@@ -121,11 +135,13 @@ class BaseInterpreter:
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
                 else:    
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])(*os[-arg_num:])
-                if b["access"] != "dynamic":
+                if b["access"] == "static":
                     if b["method"]["ref"]["name"] == os[-arg_num-1]:
                         self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
                     else:
                         raise Exception
+            elif b["access"] == "special" and b["method"]["ref"]["name"] == "java/lang/AssertionError":
+                    self.stack = []
             else:
                 raise Exception
         except:
@@ -160,6 +176,11 @@ class BaseInterpreter:
         (lv, os, pc) = self.stack.pop(-1)
         self.stack.append((lv, os + os[-b["words"]:], pc + 1))
 
+    # TODO: classes are not implemented yet
+    def _new(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        self.stack.append((lv, os, pc + 1))
+
     def _array_load(self, b):
         pass
 
@@ -175,3 +196,5 @@ class BaseInterpreter:
     def _incr(self, b):
         pass
 
+    def _negate(self, b):
+        pass

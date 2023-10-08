@@ -1,3 +1,5 @@
+from general import *
+
 class BaseInterpreter:
     def __init__(self, program, verbose, avail_programs):
         self.program = program

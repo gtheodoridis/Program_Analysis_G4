@@ -26,9 +26,10 @@ class AbstractRangeArithmeticOperation:
         return RangeSet(min(products), max(products))
     
     def _sub(a, b):
-        return RangeSet(a.start - b.start, a.end - b.end)
+        return RangeSet(a.start - b.end, a.end - b.start)
     
     def _div(a, b):
+        print(a, b)
         if b.start <= 0 and b.end >= 0:
             raise Exception("ArithmeticException")
         quotients = [a.start // b.start, a.start // b.end, a.end // b.start, a.end // b.end]

@@ -10,6 +10,7 @@ class Interpreter(BaseInterpreter):
         self.comparison = Comparison
         self.arithmeticOperation = ArithmeticOperation
         self.javaMethod = JavaMethod
+        self.abstr_type = int
 
 
     def _push(self, b):
@@ -50,3 +51,8 @@ class Interpreter(BaseInterpreter):
         index_array = os[-1]
         value = len(self.memory[index_array])
         self.stack.append((lv, os[:-1] + [value], pc + 1))    
+
+    def _negate(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        os[-1] = -os[-1]
+        self.stack.append((lv, os, pc + 1))

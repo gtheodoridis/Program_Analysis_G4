@@ -33,3 +33,18 @@ def analyse_bytecode(folder_path, target_folder_path):
             "-t", target_folder_path+json_file
         ]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result)
+
+
+def lists_equal(list1, list2):
+    if list1 is None or list2 is None:
+        return False
+
+    if len(list1) != len(list2):
+        return False
+
+    for rs1, rs2 in zip(list1, list2):
+        if rs1 != rs2:
+            return False
+
+    return True
