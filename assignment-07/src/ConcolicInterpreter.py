@@ -1,7 +1,7 @@
 import z3
 
 from JavaMethod import JavaMethod
-from Comparison import AbstractRangeComparison
+from Comparison import Comparison
 
 from BaseInterpreter import BaseInterpreter
 
@@ -23,7 +23,7 @@ class ConcolicInterpreter(BaseInterpreter):
         super().__init__(program, verbose, avail_programs)
 
         # Assign classes to attributes for later use
-        self.comparison = AbstractRangeComparison  # Assigning the AbstractRangeComparison class to self.comparison
+        self.comparison = Comparison  # Assigning the AbstractRangeComparison class to self.comparison
         from ArithmeticOperation import ArithmeticOperation
         self.arithmeticOperation = ArithmeticOperation  # Assigning the AbstractRangeArithmeticOperation class to self.arithmeticOperation
         self.javaMethod = JavaMethod  # Assigning the AbstractRangeJavaMethod class to self.javaMethod
@@ -44,6 +44,7 @@ class ConcolicInterpreter(BaseInterpreter):
             self.path = []
             model = self.solver.model()
             input = [model.eval(p, model_completion=True).as_long() for p in params]
+            print("input", input)
             conc_input = [ConcolicValue(i[0], i[1]) for i in zip(input, params)]
             
 
@@ -87,18 +88,13 @@ class ConcolicInterpreter(BaseInterpreter):
         # Load a value from an array
         (lv, os, pc) = self.stack.pop(-1)
         index_el = os[-1]  # Index of the element to load
-
-        # TODO: maybe replace with for loop        
-        assert index_el.start == index_el.end
-
-
         # index_array is assumed to not be a range but an integer
         index_array = os[-2]  # Index of the array
-        if index_el.start < 0 or index_el.start >= len(self.memory[index_array]):
+        if index_el.concrete < 0 or index_el.concrete >= len(self.memory[index_array]):
             raise Exception("IndexOutOfBoundsException")
         if index_array < 0 or index_array >= len(self.memory):
             raise Exception("NullPointerException")
-        value = self.memory[index_array][index_el.start]  # Get the value from memory
+        value = self.memory[index_array][index_el.concrete]  # Get the value from memory
         self.stack.append((lv, os[:-2] + [value], pc + 1))
 
     def _array_store(self, b):
@@ -107,29 +103,21 @@ class ConcolicInterpreter(BaseInterpreter):
         value = os[-1]  # Value to store
         # index_array is assumed to not be a range but an integer
         index_of_array = os[-3]  # Index of the array to store in
-        index_of_el = os[-2]  # Index of the element in the array
-
-        # TODO: maybe replace with for loop        
-        assert index_of_el.start == index_of_el.end
-        
-        if index_of_el.start < 0 or index_of_el.start >= len(self.memory[index_of_array]):
+        index_of_el = os[-2]  # Index of the element in the array        
+        if index_of_el.concrete < 0 or index_of_el.concrete >= len(self.memory[index_of_array]):
             raise Exception("IndexOutOfBoundsException")
         if index_of_array < 0 or index_of_array >= len(self.memory):
             raise Exception("NullPointerException")
-        self.memory[index_of_array][index_of_el.start] = value  # Otherwise, update the existing element
+        self.memory[index_of_array][index_of_el.concrete] = value  # Otherwise, update the existing element
         self.stack.append((lv, os[:-3], pc + 1))
 
     def _newarray(self, b):
         # Create a new array and store its index
         (lv, os, pc) = self.stack.pop(-1)
         size = os[-1]
-
-        # TODO: maybe replace with for loop        
-        assert size.start == size.end
-
         # TODO: use dimension
         dim = b["dim"]
-        self.memory.append([None] * size.start)  # Create a new empty array in memory
+        self.memory.append([None] * size.concrete)  # Create a new empty array in memory
         self.stack.append((lv, os + [len(self.memory)-1], pc + 1))  # Store the index of the new array
 
     def _arraylength(self, b):
@@ -141,7 +129,7 @@ class ConcolicInterpreter(BaseInterpreter):
 
     def _ifz(self, b): # maybe we remove later
         (lv, os, pc) = self.stack.pop(-1)
-        condition = getattr(self.comparison, "_"+b["condition"])(os[-1].concrete, ConcolicValue(0))
+        condition = getattr(self.comparison, "_"+b["condition"])(os[-1].concrete, ConcolicValue(0).concrete)
         if condition:
             pc = b["target"]
         else:

@@ -46,6 +46,6 @@ def analyse_bytecode(folder_path, target_folder_path):
         command = [
             "jvm2json",
             "-s", class_file,
-            "-t", target_folder_path+json_file
+            "-t", target_folder_path+'/'+json_file
         ]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
