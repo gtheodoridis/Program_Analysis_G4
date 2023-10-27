@@ -18,7 +18,6 @@ class JavaMethod:
         print(str)
 
     def _length(str):
-        print("STRING IS:", str)
         return len(str)
     
     def _charAt(str, index):
