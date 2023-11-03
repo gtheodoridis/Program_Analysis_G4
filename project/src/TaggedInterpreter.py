@@ -1,5 +1,3 @@
-import z3
-
 from JavaMethod import JavaMethod
 from Comparison import Comparison
 
@@ -34,7 +32,6 @@ class TaggedInterpreter(BaseInterpreter):
         self.functions = []
         self.if_conditions = []
 
-        self.solver = z3.Solver()
         self.path = []
         self.new_arr_counter = 0
         self.push_counter = 0
@@ -67,18 +64,23 @@ class TaggedInterpreter(BaseInterpreter):
                 logger.error("smths wrong")
                 print("last_opr", self.history["last_opr"])
                 flag = False
+                failed_tags = []
+
                 for arg in self.history["last_opr"]["args"]:
                     print("arg", arg.tags)
                     for tag in arg.tags:
                         if not tag.startswith("PUSH") and not tag.startswith("ARR"):
-                            print("This input Tag caused the program to crash:", tag)
+                            failed_tags.append(tag)
+                            # print("This input Tag caused the program to crash:", tag)
                             flag = True
                 if not flag:
                     for cond in self.if_conditions:
                         for tag in cond[0].tags + cond[2].tags:
                             if not tag.startswith("PUSH") and not tag.startswith("ARR"):
-                                print("This input Tag caused the program to crash:", tag)
+                                failed_tags.append(tag)
+                                # print("This input Tag caused the program to crash:", tag)
                                 flag = True
+                raise Exception(failed_tags)
                 return True, None
         else:
             logger.error("Unknown instruction: " + str(b))
