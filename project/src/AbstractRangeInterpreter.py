@@ -39,8 +39,8 @@ def deep_copy_with_relationship(lv, os):
     
 
 class AbstractRangeInterpreter(BaseInterpreter):
-    def __init__(self, program, verbose, avail_programs):
-        super().__init__(program, verbose, avail_programs)
+    def __init__(self, program, avail_programs):
+        super().__init__(program, avail_programs)
 
         # Assign classes to attributes for later use
         self.comparison = AbstractRangeComparison  # Assigning the AbstractRangeComparison class to self.comparison

@@ -1,8 +1,10 @@
 from Interpreter import *
 from TaggedInterpreter import *
 from general import *
+from Logger import logger
 import json
 import os
+
 
 # TODO: check inputs of the fucntion and automatically generate the inputs in local variables
 def main():
@@ -17,11 +19,11 @@ def main():
         byte_codes = get_functions_code(os.path.basename(file_path).split(".")[0], json_obj)
         functions = get_functions(os.path.basename(file_path).split(".")[0], json_obj)
 
-        interpret = TaggedInterpreter(functions[function_name], True, byte_codes)
+        interpret = TaggedInterpreter(functions[function_name], byte_codes)
         (l, s, pc) = ["FUZ"], [], 0
         interpret.memory = []
         ret = interpret.run((l, s, pc))
-        print(ret)
+        logger.info(ret)
         
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from JavaMethod import JavaMethod
 from Comparison import Comparison
 
 from BaseInterpreter import BaseInterpreter
-
+from Logger import logger
 
 class TaggedValue():
     def __init__(self, value, tags = []):
@@ -22,8 +22,8 @@ class TaggedValue():
         return self.value
 
 class TaggedInterpreter(BaseInterpreter):
-    def __init__(self, program, verbose, avail_programs):
-        super().__init__(program, verbose, avail_programs)
+    def __init__(self, program, avail_programs):
+        super().__init__(program, avail_programs)
 
         # Assign classes to attributes for later use
         self.comparison = Comparison  # Assigning the AbstractRangeComparison class to self.comparison
@@ -46,15 +46,14 @@ class TaggedInterpreter(BaseInterpreter):
 
         super().run(f)
 
-        print(self.history)
+        logger.info(self.history)
 
     def step(self):
         if len(self.stack) == 0:
             return True, None
         (l, s, pc) = self.stack[-1]
         b = self.program['bytecode'][pc]
-        if self.verbose:
-            print("Executing: ", b)
+        logger.info("Executing: " + str(b))
 
         self.log_history((l, s, pc))
 
@@ -62,10 +61,10 @@ class TaggedInterpreter(BaseInterpreter):
             try:
                 return False, getattr(self, "_"+b["opr"])(b)
             except:
-                print("smths wrong")
+                logger.error("smths wrong")
                 return True, None
         else:
-            print("Unknown instruction: ", b)
+            logger.error("Unknown instruction: " + str(b))
             raise Exception("UnsupportedOperationException")
             return True, None
         
@@ -95,17 +94,17 @@ class TaggedInterpreter(BaseInterpreter):
     #             try:
     #                 end_of_program, return_value = self.step()
     #             except Exception as e:
-    #                 print(e)
+    #                 logger.error(e)
     #                 break
 
     #             self.log_state()
     #             if return_value != None:
-    #                 print("Program Returning: ", return_value)
+    #                 logger.info("Program Returning: " + str(return_value))
     #                 return return_value
     #             if end_of_program:
     #                 break
             
-    #         print(self.path)
+    #         logger.info(self.path)
 
     #         path_constraint = z3.simplify(z3.And(*self.path))
     #         self.solver.add(z3.Not(path_constraint))

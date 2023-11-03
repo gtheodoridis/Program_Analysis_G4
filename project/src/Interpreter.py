@@ -4,8 +4,8 @@ from ArithmeticOperation import ArithmeticOperation
 from BaseInterpreter import BaseInterpreter
 
 class Interpreter(BaseInterpreter):
-    def __init__(self, program, verbose, avail_programs):
-        super().__init__(program, verbose, avail_programs)
+    def __init__(self, program, avail_programs):
+        super().__init__(program, avail_programs)
 
         self.comparison = Comparison
         self.arithmeticOperation = ArithmeticOperation

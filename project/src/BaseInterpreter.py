@@ -1,7 +1,8 @@
+from Logger import logger
+
 class BaseInterpreter:
-    def __init__(self, program, verbose, avail_programs):
+    def __init__(self, program, avail_programs):
         self.program = program
-        self.verbose = verbose
         self.avail_programs = avail_programs
         self.memory = []
         self.stack = []
@@ -20,7 +21,7 @@ class BaseInterpreter:
             end_of_program, return_value = self.step()
             self.log_state()
             if return_value != None:
-                print("Program Returning: ", return_value)
+                logger.info("Program Returning: " + str(return_value))
                 return return_value
             if end_of_program:
                 break
@@ -32,27 +33,23 @@ class BaseInterpreter:
             return True, None
         (l, s, pc) = self.stack[-1]
         b = self.program['bytecode'][pc]
-        if self.verbose:
-            print("Executing: ", b)
+        logger.info("Executing: " + str(b))
         if hasattr(self, "_"+b["opr"]):
             return False, getattr(self, "_"+b["opr"])(b)
         else:
-            print("Unknown instruction: ", b)
+            logger.info("Unknown instruction: " + str(b))
             raise Exception("UnsupportedOperationException")
             return True, None
     
     def log_start(self):
-        if self.verbose:
-            print("Starting execution...")
+        logger.info("Starting execution...")
     
     def log_done(self):
-        if self.verbose:
-            print("Done.")
+        logger.info("Done.")
             
     def log_state(self):
-        if self.verbose:
-            print("Stack: ", self.stack)
-            print("Memory: ", self.memory)
+        logger.info("Stack: " + str(self.stack))
+        logger.info("Memory: " + str(self.memory))
 
     def _return(self, b):
         (l, os, pc) = self.stack.pop(-1)
@@ -125,7 +122,7 @@ class BaseInterpreter:
                         # value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
                     # else:    
                     params = [self._class._get(i) for i in os[-arg_num:]]
-                    print(params)
+                    logger.info(params)
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])(*params)
                     # if b["method"]["name"] == "println":
                     #     if b["method"]["ref"]["name"] == os[-arg_num-1]:
@@ -146,7 +143,7 @@ class BaseInterpreter:
             # if b["method"]["name"] not in self.avail_programs:
             #     raise Exception("UnsupportedOperationException")
 
-            interpret = self.__class__(self.avail_programs[pr], self.verbose, self.avail_programs)
+            interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
             if arg_num == 0:
                 (l_new, s_new, pc_new) = [], [], 0
             else:
