@@ -1,0 +1,22 @@
+2023-11-03 11:58:56,904 - interpreter - INFO - ['../examples/ParseComplex.class', '../examples/Simple.class']
+2023-11-03 11:58:56,928 - interpreter - INFO - CompletedProcess(args=['jvm2json', '-s', '../examples/ParseComplex.class', '-t', '../examples/decompiled/ParseComplex.json'], returncode=0, stdout=b'', stderr=b'')
+2023-11-03 11:58:56,953 - interpreter - INFO - CompletedProcess(args=['jvm2json', '-s', '../examples/Simple.class', '-t', '../examples/decompiled/Simple.json'], returncode=0, stdout=b'', stderr=b'')
+2023-11-03 11:58:56,990 - interpreter - INFO - Starting execution...
+2023-11-03 11:58:56,990 - interpreter - INFO - Stack: [([TV FUZZZ ['LV0']], [], 0)]
+2023-11-03 11:58:56,991 - interpreter - INFO - Memory: []
+2023-11-03 11:58:56,991 - interpreter - INFO - Executing: {'offset': 0, 'opr': 'load', 'type': 'ref', 'index': 0}
+2023-11-03 11:58:56,992 - interpreter - INFO - Stack: [([TV FUZZZ ['LV0']], [TV FUZZZ ['LV0']], 1)]
+2023-11-03 11:58:56,993 - interpreter - INFO - Memory: []
+2023-11-03 11:58:56,993 - interpreter - INFO - Executing: {'offset': 1, 'opr': 'invoke', 'access': 'virtual', 'method': {'ref': {'kind': 'class', 'name': 'java/lang/String'}, 'name': 'length', 'args': [], 'returns': 'int'}}
+2023-11-03 11:58:56,994 - interpreter - INFO - Stack: [([TV FUZZZ ['LV0']], [TV 5 ['LV0']], 2)]
+2023-11-03 11:58:56,994 - interpreter - INFO - Memory: []
+2023-11-03 11:58:56,995 - interpreter - INFO - Executing: {'offset': 4, 'opr': 'push', 'value': {'type': 'integer', 'value': 4}}
+2023-11-03 11:58:56,996 - interpreter - INFO - Stack: [([TV FUZZZ ['LV0']], [TV 5 ['LV0'], TV 4 PUSH0], 3)]
+2023-11-03 11:58:56,997 - interpreter - INFO - Memory: []
+2023-11-03 11:58:56,997 - interpreter - INFO - Executing: {'offset': 5, 'opr': 'if', 'condition': 'le', 'target': 6}
+2023-11-03 11:58:56,998 - interpreter - ERROR - smths wrong
+2023-11-03 11:58:56,999 - interpreter - INFO - Stack: []
+2023-11-03 11:58:57,000 - interpreter - INFO - Memory: []
+2023-11-03 11:58:57,000 - interpreter - INFO - Done.
+2023-11-03 11:58:57,000 - interpreter - INFO - {0: ([TV FUZZZ ['LV0']], []), 1: ([TV FUZZZ ['LV0']], [TV FUZZZ ['LV0']]), 2: ([TV FUZZZ ['LV0']], [TV 5 ['LV0']]), 3: ([TV FUZZZ ['LV0']], [TV 5 ['LV0'], TV 4 PUSH0])}
+2023-11-03 11:58:57,001 - interpreter - INFO - None

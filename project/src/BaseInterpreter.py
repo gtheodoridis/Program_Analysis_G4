@@ -7,12 +7,12 @@ class BaseInterpreter:
         self.memory = []
         self.stack = []
 
-        self.functions = []
-        self.if_conditions = []
         self.comparison = None
         self.arithmeticOperation = None
         self.javaMethod = None
         self._class = None
+
+        self.history = {}
 
     def run(self, f):
         self.program = self.program['code']
@@ -56,12 +56,15 @@ class BaseInterpreter:
     def _return(self, b):
         (l, os, pc) = self.stack.pop(-1)
         if b["type"] == None:
+            self.history["last_opr"] = {"opr_name":"_return"}
             return None
         elif b["type"] == "int":
+            self.history["last_opr"] = {"opr_name":"_return", "args":os[-1]}
             return os[-1]
 
     def _load(self, b):
         (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_load", "args":lv[b["index"]]}
         if b["type"] == "ref":
             value = lv[b["index"]]
             self.stack.append((lv, os + [value], pc + 1))
@@ -79,6 +82,7 @@ class BaseInterpreter:
 
     def _store(self, b):
         (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_store", "args":os[-1]}
         value = os[-1]
         if b["index"] >= len(lv):
             lv = lv + [value]
@@ -91,12 +95,14 @@ class BaseInterpreter:
 
     def _goto(self, b):
         (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_goto"}
         value = b["target"]
         pc = value
         self.stack.append((lv, os, pc))
         
     def _get(self, b):
         (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_get"}
         value = getattr(self.javaMethod, "_get")(b["field"])
         self.stack.append((lv, os + [value], pc + 1))
 
@@ -151,11 +157,10 @@ class BaseInterpreter:
                 else:
                     self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
-        self.functions.append((b["method"]["name"], b["method"]["args"], params[1:], b["method"]["returns"]))
-        logger.info("Function calls stack: " + str(self.functions))
 
     def _dup(self, b):
         (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_dup", "args":os[-b["words"]:]}
         self.stack.append((lv, os + os[-b["words"]:], pc + 1))
 
     def _array_load(self, b):
