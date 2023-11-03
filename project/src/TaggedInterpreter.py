@@ -231,7 +231,7 @@ class TaggedInterpreter(BaseInterpreter):
         (lv, os, pc) = self.stack.pop(-1)
         self.history["last_opr"] = {"opr_name":"_ifz", "condition":b["condition"], "args":os[-1]}
         zero = TaggedValue(0)
-        condition = getattr(self.comparison, "_"+b["condition"])(os[-1].value, zero)
+        condition = getattr(self.comparison, "_"+b["condition"])(os[-1].value, zero.value)
         if condition:
             pc = b["target"]
             self.if_conditions.append((os[-1], b["condition"], zero))
