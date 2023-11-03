@@ -188,6 +188,8 @@ class TaggedInterpreter(BaseInterpreter):
         else:
             pc = pc + 1
         self.stack.append((lv, os[:-2], pc))
+        self.if_conditions.append((os[-2].value, b["condition"], os[-1].value))
+        logger.info("if conditions stack: " + str(self.if_conditions))
 
     def _ifz(self, b): # maybe we remove later
         (lv, os, pc) = self.stack.pop(-1)
@@ -197,6 +199,8 @@ class TaggedInterpreter(BaseInterpreter):
         else:
             pc = pc + 1
         self.stack.append((lv, os[:-1], pc))
+        self.if_conditions.append((os[-1].value, b["condition"], TaggedValue(0)))
+        logger.info("if conditions stack: " + str(self.if_conditions))
 
     def _binary(self, b):
         (lv, os, pc) = self.stack.pop(-1)

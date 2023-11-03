@@ -7,6 +7,8 @@ class BaseInterpreter:
         self.memory = []
         self.stack = []
 
+        self.functions = []
+        self.if_conditions = []
         self.comparison = None
         self.arithmeticOperation = None
         self.javaMethod = None
@@ -73,13 +75,7 @@ class BaseInterpreter:
         self.stack.append((lv, os[:-2] + [value], pc + 1))
 
     def _if(self, b):
-        (lv, os, pc) = self.stack.pop(-1)
-        condition = getattr(self.comparison, "_"+b["condition"])(os[-2], os[-1])
-        if condition:
-            pc = b["target"]
-        else:
-            pc = pc + 1
-        self.stack.append((lv, os[:-2], pc))
+        pass
 
     def _store(self, b):
         (lv, os, pc) = self.stack.pop(-1)
@@ -91,13 +87,7 @@ class BaseInterpreter:
         self.stack.append((lv, os[:-1], pc + 1))
 
     def _ifz(self, b): # maybe we remove later
-        (lv, os, pc) = self.stack.pop(-1)
-        condition = getattr(self.comparison, "_"+b["condition"])(os[-1], 0)
-        if condition:
-            pc = b["target"]
-        else:
-            pc = pc + 1
-        self.stack.append((lv, os[:-1], pc))
+        pass
 
     def _goto(self, b):
         (lv, os, pc) = self.stack.pop(-1)
@@ -113,6 +103,7 @@ class BaseInterpreter:
     def _invoke(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         arg_num = len(b["method"]["args"])
+        params = []
 
         try:
             if b["access"] == "virtual":
@@ -122,7 +113,7 @@ class BaseInterpreter:
                         # value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
                     # else:    
                     params = [self._class._get(i) for i in os[-arg_num:]]
-                    logger.info(params)
+                    logger.info(str(params))
                     value = getattr(self.javaMethod, "_" + b["method"]["name"])(*params)
                     # if b["method"]["name"] == "println":
                     #     if b["method"]["ref"]["name"] == os[-arg_num-1]:
@@ -159,6 +150,9 @@ class BaseInterpreter:
                     self.stack.append((lv, os + [ret], pc + 1))
                 else:
                     self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
+
+        self.functions.append((b["method"]["name"], b["method"]["args"], params[1:], b["method"]["returns"]))
+        logger.info("Function calls stack: " + str(self.functions))
 
     def _dup(self, b):
         (lv, os, pc) = self.stack.pop(-1)
