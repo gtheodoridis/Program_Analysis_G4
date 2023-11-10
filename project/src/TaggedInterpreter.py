@@ -4,6 +4,8 @@ from Comparison import Comparison
 from BaseInterpreter import BaseInterpreter
 from Logger import logger
 
+import traceback
+
 class TaggedValue():
     def __init__(self, value, tags = []):
         self.value = value
@@ -44,9 +46,11 @@ class TaggedInterpreter(BaseInterpreter):
         for ind in range(len(os)):
             os[ind] = self._class(os[ind], ["SV{}".format(ind)])
 
-        super().run(f)
+        ret = super().run(f)
 
         logger.info(self.history)
+        if ret:
+            return ret.value
 
     def step(self):
         if len(self.stack) == 0:
@@ -69,14 +73,14 @@ class TaggedInterpreter(BaseInterpreter):
                 for arg in self.history["last_opr"]["args"]:
                     print("arg", arg.tags)
                     for tag in arg.tags:
-                        if not tag.startswith("PUSH") and not tag.startswith("ARR"):
+                        if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
                             failed_tags.append(tag)
                             # print("This input Tag caused the program to crash:", tag)
                             flag = True
                 if not flag:
                     for cond in self.if_conditions:
                         for tag in cond[0].tags + cond[2].tags:
-                            if not tag.startswith("PUSH") and not tag.startswith("ARR"):
+                            if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
                                 failed_tags.append(tag)
                                 # print("This input Tag caused the program to crash:", tag)
                                 flag = True
@@ -152,10 +156,6 @@ class TaggedInterpreter(BaseInterpreter):
         (lv, os, pc) = self.stack.pop(-1)
         self.history["last_opr"] = {"opr_name":"_array_load", "args":os[-1]}
         index_el = os[-1]  # Index of the element to load
-
-        # TODO: maybe replace with for loop        
-        assert index_el.start == index_el.end
-
 
         # index_array is assumed to not be a range but an integer
         index_array = os[-2]  # Index of the array
@@ -253,6 +253,12 @@ class TaggedInterpreter(BaseInterpreter):
         tagged_value = TaggedValue(value, taggs)
         self.stack.append((lv, os[:-2] + [tagged_value], pc + 1))
 
+    def _get(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        self.history["last_opr"] = {"opr_name":"_get"}
+        value = getattr(self.javaMethod, "_get")(b["field"])
+        self.stack.append((lv, os + [TaggedValue(value, ["JAVA"])], pc + 1))
+
     def _invoke(self, b):
         (lv, os, pc) = self.stack.pop(-1)
         arg_num = len(b["method"]["args"])
@@ -279,34 +285,39 @@ class TaggedInterpreter(BaseInterpreter):
                     self.stack.append((lv, os[:-arg_num-1] + [self._class(value, taggs)], pc + 1))
                 else:
                     raise Exception
-        except:
-            pr = None
-            for av_pr in self.avail_programs:
-                if av_pr.endswith(b["method"]["name"]):
-                    pr = av_pr
-            if not pr:
-                raise Exception("UnsupportedOperationException")
-            
-            # if b["method"]["name"] not in self.avail_programs:
-            #     raise Exception("UnsupportedOperationException")
+            elif b["access"] == "static":
+                pr = None
+                for av_pr in self.avail_programs:
+                    if av_pr.endswith(b["method"]["name"]):
+                        pr = av_pr
+                if not pr:
+                    raise Exception("UnsupportedOperationException")
+                
+                # if b["method"]["name"] not in self.avail_programs:
+                #     raise Exception("UnsupportedOperationException")
 
-            interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
-            if arg_num == 0:
-                (l_new, s_new, pc_new) = [], [], 0
-            else:
-                (l_new, s_new, pc_new) = os[-arg_num:], [], 0
-            self.history["last_opr"] = {"opr_name":"_invoke", "metho_name":b["method"]["name"], "args":[l_new, s_new]}
-            ret = interpret.run((l_new, s_new, pc_new))
-            if b["method"]["returns"] == None:
+                interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
                 if arg_num == 0:
-                    self.stack.append((lv, os, pc + 1))
+                    (l_new, s_new, pc_new) = [], [], 0
                 else:
-                    self.stack.append((lv, os[:-arg_num], pc + 1))
-            else:
-                if arg_num == 0:
-                    self.stack.append((lv, os + [ret], pc + 1))
+                    (l_new, s_new, pc_new) = os[-arg_num:], [], 0
+                self.history["last_opr"] = {"opr_name":"_invoke", "metho_name":b["method"]["name"], "args":[l_new, s_new]}
+                print(interpret)
+                ret = interpret.run((l_new, s_new, pc_new))
+                print(ret)
+                if b["method"]["returns"] == None:
+                    if arg_num == 0:
+                        self.stack.append((lv, os, pc + 1))
+                    else:
+                        self.stack.append((lv, os[:-arg_num], pc + 1))
                 else:
-                    self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
+                    if arg_num == 0:
+                        self.stack.append((lv, os + [ret], pc + 1))
+                    else:
+                        self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
+        except:
+            traceback.print_exc()
+            pass
 
         self.functions.append((b["method"]["name"], b["method"]["args"], os[-arg_num:], b["method"]["returns"]))
         logger.info("Function calls stack: " + str(self.functions))
