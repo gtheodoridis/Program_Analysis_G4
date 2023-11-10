@@ -82,7 +82,7 @@ class TaggedInterpreter(BaseInterpreter):
             except Exception as e:
                 logger.error("smths wrong")
                 print("last_opr", self.history["last_opr"])
-                flag = False
+                # flag = False
                 failed_tags = []
 
                 for arg in self.history["last_opr"]["args"]:
@@ -91,14 +91,14 @@ class TaggedInterpreter(BaseInterpreter):
                         if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
                             failed_tags.append(tag)
                             # print("This input Tag caused the program to crash:", tag)
+                            # flag = True
+                # if not flag:
+                for cond in self.if_conditions:
+                    for tag in cond[0].tags + cond[2].tags:
+                        if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
+                            failed_tags.append(tag)
+                            # print("This input Tag caused the program to crash:", tag)
                             flag = True
-                if not flag:
-                    for cond in self.if_conditions:
-                        for tag in cond[0].tags + cond[2].tags:
-                            if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
-                                failed_tags.append(tag)
-                                # print("This input Tag caused the program to crash:", tag)
-                                flag = True
                 raise FailedTagException(e, failed_tags) from None
                 return True, None
         else:
@@ -226,6 +226,7 @@ class TaggedInterpreter(BaseInterpreter):
         (lv, os, pc) = self.stack.pop(-1)
         self.history["last_opr"] = {"opr_name":"_if", "condition":b["condition"], "args":[os[-2], os[-1]]}
         condition = getattr(self.comparison, "_"+b["condition"])(os[-2].value, os[-1].value)
+        print("###########",condition)
         if condition:
             pc = b["target"]
             self.if_conditions.append((os[-2], b["condition"], os[-1]))

@@ -115,6 +115,36 @@ def test_SplittingInput_Throw():
     except FailedTagException as e:
         assert set(['LV1']) == set(e.tags)
 
+def test_DirectInputUsageIf_Throw():
+    interpret = TaggedInterpreter(byte_codes['DirectInputUsageIf_main'], byte_codes)
+    (l, s, pc) = [1, 0], [], 0
+    interpret.memory = []
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV0', 'LV1']) == set(e.tags)
+
+def test_ArrayAcces_Throw():
+    interpret = TaggedInterpreter(byte_codes['ArrayAcces_main'], byte_codes)
+    (l, s, pc) = [0, 5], [], 0
+    interpret.memory = [["str1","str2"]]
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV1']) == set(e.tags)
+
+def test_ArrayElement_Throw():
+    interpret = TaggedInterpreter(byte_codes['ArrayElement_main'], byte_codes)
+    (l, s, pc) = [0, 1], [], 0
+    interpret.memory = [["str1","str2"]]
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['MVEL1']) == set(e.tags)
+
 def test_noop():
     interpret = TaggedInterpreter(byte_codes['Simple_noop'], byte_codes)
     (l, s, pc) = [], [], 0
