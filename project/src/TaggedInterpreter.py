@@ -41,10 +41,13 @@ class TaggedInterpreter(BaseInterpreter):
 
     def run(self, f):
         (l, os, pc) = f
+        # print("TTTTTTEST", os)
         for ind in range(len(l)):
-            l[ind] = self._class(l[ind], ["LV{}".format(ind)])
+            if not isinstance(l[ind], TaggedValue):
+                l[ind] = self._class(l[ind], ["LV{}".format(ind)])
         for ind in range(len(os)):
-            os[ind] = self._class(os[ind], ["SV{}".format(ind)])
+            if not isinstance(os[ind], TaggedValue):
+                os[ind] = self._class(os[ind], ["SV{}".format(ind)])
 
         for val in range(len(self.memory)):
             for ind in range(len(self.memory[val])):
@@ -55,13 +58,13 @@ class TaggedInterpreter(BaseInterpreter):
 
         logger.info(self.history)
         if ret:
-            return ret.value
+            return ret
 
     def step(self):
         if len(self.stack) == 0:
             return True, None
         (l, s, pc) = self.stack[-1]
-        b = self.program['bytecode'][pc]
+        b = self.program['code']['bytecode'][pc]
         logger.info("Executing: " + str(b))
 
         self.log_history((l, s, pc))
@@ -105,9 +108,9 @@ class TaggedInterpreter(BaseInterpreter):
     #     self.log_start()
     #     self.log_state()
 
-    #     # params = [z3.Int(f"p{i}") for i, _ in enumerate(self.program['params'])]
+    #     # params = [z3.Int(f"p{i}") for i, _ in enumerate(self.program['code']['params'])]
 
-    #     self.program = self.program['code']
+    #     # self.program = self.program['code']
 
     #     while self.solver.check() == z3.sat:
     #         self.path = []

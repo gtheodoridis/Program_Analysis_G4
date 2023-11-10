@@ -15,7 +15,7 @@ class BaseInterpreter:
         self.history = {}
 
     def run(self, f):
-        self.program = self.program['code']
+        # self.program = self.program['code']
         self.stack.append(f)
         self.log_start()
         self.log_state()
@@ -34,7 +34,7 @@ class BaseInterpreter:
         if len(self.stack) == 0:
             return True, None
         (l, s, pc) = self.stack[-1]
-        b = self.program['bytecode'][pc]
+        b = self.program['code']['bytecode'][pc]
         logger.info("Executing: " + str(b))
         if hasattr(self, "_"+b["opr"]):
             return False, getattr(self, "_"+b["opr"])(b)

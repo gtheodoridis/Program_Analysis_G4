@@ -7,14 +7,14 @@ from Logger import logger
 def get_paths(folder_path):
     return glob.glob(folder_path + '/**/*.json', recursive = True)
 
-def get_function_bytecode(json_obj):
-    return json_obj['code']
+# def get_function_bytecode(json_obj):
+#     return json_obj['code']
 
-def get_functions_code(file_name, json_obj):
-    functions = {}
-    for func in json_obj['methods']:
-        functions[file_name + "_" + func['name']] = get_function_bytecode(func)
-    return functions
+# def get_functions_code(file_name, json_obj):
+#     functions = {}
+#     for func in json_obj['methods']:
+#         functions[file_name + "_" + func['name']] = get_function_bytecode(func)
+#     return functions
 
 def get_function(json_obj):
     return json_obj
