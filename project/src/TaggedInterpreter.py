@@ -7,9 +7,10 @@ from Logger import logger
 import traceback
 
 class FailedTagException(Exception):
-    def __init__(self, tags):
+    def __init__(self, e, tags):
         self.tags = tags
-        super().__init__(f"An exception occured with list: {tags}")
+        self.exc_type = e
+        super().__init__(f"An exception of type {e} occured with tags: {tags}")
 
 class TaggedValue():
     def __init__(self, value, tags = []):
@@ -46,7 +47,6 @@ class TaggedInterpreter(BaseInterpreter):
 
     def run(self, f):
         (l, os, pc) = f
-        # print("TTTTTTEST", os)
         for ind in range(len(l)):
             if not isinstance(l[ind], TaggedValue):
                 l[ind] = self._class(l[ind], ["LV{}".format(ind)])
@@ -79,7 +79,7 @@ class TaggedInterpreter(BaseInterpreter):
                 return False, getattr(self, "_"+b["opr"])(b)
             except FailedTagException as e:
                 raise e
-            except Exception:
+            except Exception as e:
                 logger.error("smths wrong")
                 print("last_opr", self.history["last_opr"])
                 flag = False
@@ -99,7 +99,7 @@ class TaggedInterpreter(BaseInterpreter):
                                 failed_tags.append(tag)
                                 # print("This input Tag caused the program to crash:", tag)
                                 flag = True
-                raise FailedTagException(failed_tags) from None
+                raise FailedTagException(e, failed_tags) from None
                 return True, None
         else:
             logger.error("Unknown instruction: " + str(b))
@@ -156,20 +156,20 @@ class TaggedInterpreter(BaseInterpreter):
         tag = "PUSH{}".format(self.push_counter)
         self.push_counter += 1
         value = TaggedValue(value["value"], [tag])  # Create a new RangeSet object with the value as both start and end
-        self.history["last_opr"] = {"opr_name":"_push", "args":value}
+        self.history["last_opr"] = {"opr_name":"_push", "args":[value]}
         self.stack.append((l, os + [value], pc + 1))
     
     def _incr(self, b):
         # Increment the value in an array by a specified amount
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_incr",  "args":lv[b["index"]]}
+        self.history["last_opr"] = {"opr_name":"_incr",  "args":[lv[b["index"]]]}
         lv[b["index"]].value = lv[b["index"]].value + b["amount"]
         self.stack.append((lv, os, pc + 1))
 
     def _array_load(self, b):
         # Load a value from an array
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_array_load", "args":os[-1]}
+        self.history["last_opr"] = {"opr_name":"_array_load", "args":[os[-1]]}
         index_el = os[-1]  # Index of the element to load
 
         # index_array is assumed to not be a range but an integer
@@ -184,7 +184,7 @@ class TaggedInterpreter(BaseInterpreter):
     def _array_store(self, b):
         # Store a value in an array
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_array_store", "args":os[-1]}
+        self.history["last_opr"] = {"opr_name":"_array_store", "args":[os[-1]]}
         value = os[-1]  # Value to store
         # index_array is assumed to not be a range but an integer
         index_of_array = self._class._get(os[-3])  # Index of the array to store in
@@ -200,7 +200,7 @@ class TaggedInterpreter(BaseInterpreter):
     def _newarray(self, b):
         # Create a new array and store its index
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_arraylength", "args":os[-1]}
+        self.history["last_opr"] = {"opr_name":"_arraylength", "args":[os[-1]]}
         size = self._class._get(os[-1])
 
         # TODO: use dimension
@@ -235,11 +235,11 @@ class TaggedInterpreter(BaseInterpreter):
         taggs = os[-2].tags + os[-1].tags
         self.stack.append((lv, os[:-2], pc))
         # self.if_conditions.append((os[-2].value, b["condition"], os[-1].value))
-        logger.info("if conditions stack: " + str(self.if_conditions))
+        # logger.info("if conditions stack: " + str(self.if_conditions))
 
     def _ifz(self, b): # maybe we remove later
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_ifz", "condition":b["condition"], "args":os[-1]}
+        self.history["last_opr"] = {"opr_name":"_ifz", "condition":b["condition"], "args":[os[-1]]}
         zero = TaggedValue(0)
         condition = getattr(self.comparison, "_"+b["condition"])(os[-1].value, zero.value)
         if condition:
@@ -250,7 +250,7 @@ class TaggedInterpreter(BaseInterpreter):
             self.if_conditions.append((os[-1], "not_"+b["condition"], zero))
         self.stack.append((lv, os[:-1], pc))
         # self.if_conditions.append((os[-1].value, b["condition"], TaggedValue(0)))
-        logger.info("if conditions stack: " + str(self.if_conditions))
+        # logger.info("if conditions stack: " + str(self.if_conditions))
 
     def _binary(self, b):
         (lv, os, pc) = self.stack.pop(-1)
@@ -325,3 +325,7 @@ class TaggedInterpreter(BaseInterpreter):
         self.functions.append((b["method"]["name"], b["method"]["args"], os[-arg_num:], b["method"]["returns"]))
         logger.info("Function calls stack: " + str(self.functions))
 
+    def _negate(self, b):
+        (lv, os, pc) = self.stack.pop(-1)
+        os[-1].value = -os[-1].value 
+        self.stack.append((lv, os, pc + 1))
