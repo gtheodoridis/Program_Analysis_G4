@@ -8,7 +8,7 @@ import sympy
 
 sys.path.append('../src')
 
-from TaggedInterpreter import TaggedInterpreter, TaggedValue
+from TaggedInterpreter import TaggedInterpreter, FailedTagException
 from general import *
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,8 +39,9 @@ def test_DirectInputsUsage_Throw():
     interpret.memory = []
     try:
         interpret.run((l, s, pc))
-    except Exception as e:
-        assert set(['LV0']) == set(e.args[0])
+        raise("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV0']) == set(e.tags)
 
 def test_DirectInputsUsage_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['DirectInputsUsage_main'], byte_codes)
@@ -54,8 +55,9 @@ def test_OperationOnInput_Throw():
     interpret.memory = []
     try:
         interpret.run((l, s, pc))
-    except Exception as e:
-        assert set(['LV0']) == set(e.args[0])
+        raise("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV0']) == set(e.tags)
 
 def test_OperationOnInput_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['OperationOnInput_main'], byte_codes)
@@ -69,8 +71,9 @@ def test_IndirectUsageIf_Throw():
     interpret.memory = []
     try:
         interpret.run((l, s, pc))
-    except Exception as e:
-        assert set(['LV0']) == set(e.args[0])
+        raise("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV0']) == set(e.tags)
 
 def test_IndirectUsageIf_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['IndirectUsageIf_main'], byte_codes)
@@ -85,8 +88,9 @@ def test_TaggingInsideFunction_Throw():
     interpret.memory = []
     try:
         interpret.run((l, s, pc))
-    except Exception as e:
-        assert set(['LV1']) == set(e.args[0])
+        raise("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV1']) == set(e.tags)
 
 def test_TaggingInsideFunction_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['TaggingInsideFunction_main'], byte_codes)
@@ -100,8 +104,9 @@ def test_SplittingInput_Throw():
     interpret.memory = []
     try:
         interpret.run((l, s, pc))
-    except Exception as e:
-        assert set(['LV1']) == set(e.args[0])
+        raise("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['LV1']) == set(e.tags)
 
 def test_noop():
     interpret = TaggedInterpreter(byte_codes['Simple_noop'], byte_codes)
@@ -161,7 +166,7 @@ def test_fib():
 
 def test_first():
     interpret = TaggedInterpreter(byte_codes['Array_first'], byte_codes)
-    test_arr = [random.randint(0, 25) for i in range(random.randint(0, 25))]
+    test_arr = [random.randint(0, 25) for i in range(random.randint(1, 25))]
     (l, s, pc) = [0], [], 0
     interpret.memory = [test_arr]
     assert test_arr[0] == interpret.run((l, s, pc)).value
@@ -182,7 +187,9 @@ def test_newArray():
 def test_bubbleSort():
     interpret = TaggedInterpreter(byte_codes['Array_bubbleSort'], byte_codes)
     test_arr = [random.randint(0, 25) for i in range(random.randint(0, 25))]
+    input = test_arr.copy()
     (l, s, pc) = [0], [], 0
     interpret.memory = [test_arr]
-    interpret.run((l, s, pc)).value
-    assert sorted(test_arr) == interpret.memory[0]
+    interpret.run((l, s, pc))
+    output = [i.value for i in interpret.memory[0].value]
+    assert sorted(input) ==  output

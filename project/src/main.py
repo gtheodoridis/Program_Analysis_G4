@@ -11,8 +11,8 @@ def main():
     folder_path = "../examples"
     folder_path_target = "../examples/decompiled/"
     analyse_bytecode(folder_path, folder_path_target)
-    # file_path = "../examples/decompiled/IndirectUsageIf.json"
-    file_path = "../../course-02242-examples/decompiled/dtu/compute/exec/Calls.json"
+    file_path = "../examples/decompiled/TaggingInsideFunction.json"
+    # file_path = "../../course-02242-examples/decompiled/dtu/compute/exec/Array.json"
 
 
     folder_path_class_files = "../../course-02242-examples/src/executables/java/dtu/compute/exec"
@@ -33,12 +33,21 @@ def main():
         # interpret.memory = [test_arr]
         # assert test_arr[0] == interpret.run((l, s, pc))
 
-        interpret = TaggedInterpreter(functions['Calls_fib'], functions)
-        import sympy
-        test_int = 5
-        logger.info("TRYING " + str(test_int))
-        (l, s, pc) = [test_int], [], 0
-        assert sympy.fibonacci(test_int+1) == interpret.run((l, s, pc)).value
+        interpret = TaggedInterpreter(functions['TaggingInsideFunction_main'], functions)
+        (l, s, pc) = [1, 0], [], 0
+        interpret.memory = []
+        try:
+            interpret.run((l, s, pc))
+            raise("THIS SHOULD NEVER HAPPEN")
+        except FailedTagException as e:
+            assert set(['LV1']) == set(e.tags)
+
+        # interpret = TaggedInterpreter(functions['Calls_fib'], functions)
+        # import sympy
+        # test_int = 5
+        # logger.info("TRYING " + str(test_int))
+        # (l, s, pc) = [test_int], [], 0
+        # assert sympy.fibonacci(test_int+1) == interpret.run((l, s, pc)).value
 
         # interpret = TaggedInterpreter(functions[function_name], functions)
         # (l, s, pc) = [1, 12], [], 0

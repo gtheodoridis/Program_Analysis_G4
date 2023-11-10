@@ -6,6 +6,11 @@ from Logger import logger
 
 import traceback
 
+class FailedTagException(Exception):
+    def __init__(self, tags):
+        self.tags = tags
+        super().__init__(f"An exception occured with list: {tags}")
+
 class TaggedValue():
     def __init__(self, value, tags = []):
         self.value = value
@@ -72,7 +77,9 @@ class TaggedInterpreter(BaseInterpreter):
         if hasattr(self, "_"+b["opr"]):
             try:
                 return False, getattr(self, "_"+b["opr"])(b)
-            except:
+            except FailedTagException as e:
+                raise e
+            except Exception:
                 logger.error("smths wrong")
                 print("last_opr", self.history["last_opr"])
                 flag = False
@@ -92,7 +99,7 @@ class TaggedInterpreter(BaseInterpreter):
                                 failed_tags.append(tag)
                                 # print("This input Tag caused the program to crash:", tag)
                                 flag = True
-                raise Exception(failed_tags)
+                raise FailedTagException(failed_tags) from None
                 return True, None
         else:
             logger.error("Unknown instruction: " + str(b))
@@ -207,8 +214,8 @@ class TaggedInterpreter(BaseInterpreter):
     def _arraylength(self, b):
         # Get the length of an array
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_arraylength", "args":[os[-1], self.memory[index_array]]}
         index_array = self._class._get(os[-1])  # Index of the array
+        self.history["last_opr"] = {"opr_name":"_arraylength", "args":[os[-1], self.memory[index_array]]}
         value = len(self.memory[index_array].value)  # Get the length of the array in memory
         print("arraylength", value)
         print("arraylength", self.memory[index_array].tags)
@@ -226,7 +233,6 @@ class TaggedInterpreter(BaseInterpreter):
             pc = pc + 1
             self.if_conditions.append((os[-2], "not_"+b["condition"], os[-1]))
         taggs = os[-2].tags + os[-1].tags
-        print("taggs", taggs)
         self.stack.append((lv, os[:-2], pc))
         # self.if_conditions.append((os[-2].value, b["condition"], os[-1].value))
         logger.info("if conditions stack: " + str(self.if_conditions))
@@ -242,7 +248,6 @@ class TaggedInterpreter(BaseInterpreter):
         else:
             pc = pc + 1
             self.if_conditions.append((os[-1], "not_"+b["condition"], zero))
-        print("taggs", os[-1].tags)
         self.stack.append((lv, os[:-1], pc))
         # self.if_conditions.append((os[-1].value, b["condition"], TaggedValue(0)))
         logger.info("if conditions stack: " + str(self.if_conditions))
@@ -265,61 +270,57 @@ class TaggedInterpreter(BaseInterpreter):
         (lv, os, pc) = self.stack.pop(-1)
         arg_num = len(b["method"]["args"])
 
-        try:
-            if b["access"] == "virtual":
-                arg_num += 1
-                if hasattr(self.javaMethod, "_" + b["method"]["name"]):
-                    # if arg_num == 0:
-                        # value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
-                    # else:    
-                    params = [self._class._get(i) for i in os[-arg_num:]]
-                    print(params)
-                    self.history["last_opr"] = {"opr_name":"_invoke", "method_name":b["method"]["name"], "args":os[-arg_num:]}
-                    value = getattr(self.javaMethod, "_" + b["method"]["name"])(*params)
-                    # if b["method"]["name"] == "println":
-                    #     if b["method"]["ref"]["name"] == os[-arg_num-1]:
-                    #         self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
-                    #     else:
-                    #         raise Exception
-                    taggs = []
-                    for arg in os[-arg_num:]:
-                        taggs.extend(arg.tags)
-                    self.stack.append((lv, os[:-arg_num-1] + [self._class(value, taggs)], pc + 1))
-                else:
-                    raise Exception
-            elif b["access"] == "static":
-                pr = None
-                for av_pr in self.avail_programs:
-                    if av_pr.endswith(b["method"]["name"]):
-                        pr = av_pr
-                if not pr:
-                    raise Exception("UnsupportedOperationException")
-                
-                # if b["method"]["name"] not in self.avail_programs:
-                #     raise Exception("UnsupportedOperationException")
+        if b["access"] == "virtual":
+            arg_num += 1
+            if hasattr(self.javaMethod, "_" + b["method"]["name"]):
+                # if arg_num == 0:
+                    # value = getattr(self.javaMethod, "_" + b["method"]["name"])([])
+                # else:    
+                params = [self._class._get(i) for i in os[-arg_num:]]
+                print(params)
+                self.history["last_opr"] = {"opr_name":"_invoke", "method_name":b["method"]["name"], "args":os[-arg_num:]}
+                value = getattr(self.javaMethod, "_" + b["method"]["name"])(*params)
+                # if b["method"]["name"] == "println":
+                #     if b["method"]["ref"]["name"] == os[-arg_num-1]:
+                #         self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
+                #     else:
+                #         raise Exception
+                taggs = []
+                for arg in os[-arg_num:]:
+                    taggs.extend(arg.tags)
+                self.stack.append((lv, os[:-arg_num-1] + [self._class(value, taggs)], pc + 1))
+            else:
+                raise Exception
+        elif b["access"] == "static":
+            pr = None
+            for av_pr in self.avail_programs:
+                if av_pr.endswith(b["method"]["name"]):
+                    pr = av_pr
+            if not pr:
+                raise Exception("UnsupportedOperationException")
+            
+            # if b["method"]["name"] not in self.avail_programs:
+            #     raise Exception("UnsupportedOperationException")
 
-                interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
+            interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
+            if arg_num == 0:
+                (l_new, s_new, pc_new) = [], [], 0
+            else:
+                (l_new, s_new, pc_new) = os[-arg_num:], [], 0
+            self.history["last_opr"] = {"opr_name":"_invoke", "metho_name":b["method"]["name"], "args":[l_new, s_new]}
+            print(interpret)
+            ret = interpret.run((l_new, s_new, pc_new))
+            print(ret)
+            if b["method"]["returns"] == None:
                 if arg_num == 0:
-                    (l_new, s_new, pc_new) = [], [], 0
+                    self.stack.append((lv, os, pc + 1))
                 else:
-                    (l_new, s_new, pc_new) = os[-arg_num:], [], 0
-                self.history["last_opr"] = {"opr_name":"_invoke", "metho_name":b["method"]["name"], "args":[l_new, s_new]}
-                print(interpret)
-                ret = interpret.run((l_new, s_new, pc_new))
-                print(ret)
-                if b["method"]["returns"] == None:
-                    if arg_num == 0:
-                        self.stack.append((lv, os, pc + 1))
-                    else:
-                        self.stack.append((lv, os[:-arg_num], pc + 1))
+                    self.stack.append((lv, os[:-arg_num], pc + 1))
+            else:
+                if arg_num == 0:
+                    self.stack.append((lv, os + [ret], pc + 1))
                 else:
-                    if arg_num == 0:
-                        self.stack.append((lv, os + [ret], pc + 1))
-                    else:
-                        self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
-        except:
-            traceback.print_exc()
-            pass
+                    self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
         self.functions.append((b["method"]["name"], b["method"]["args"], os[-arg_num:], b["method"]["returns"]))
         logger.info("Function calls stack: " + str(self.functions))
