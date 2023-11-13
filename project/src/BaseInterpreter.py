@@ -1,4 +1,4 @@
-from .Logger import logger
+import Logger
 
 class BaseInterpreter:
     def __init__(self, program, avail_programs):
@@ -22,7 +22,7 @@ class BaseInterpreter:
             end_of_program, return_value = self.step()
             self.log_state()
             if return_value != None:
-                logger.info("Program Returning: " + str(return_value))
+                Logger.logger.info("Program Returning: " + str(return_value))
                 return return_value
             if end_of_program:
                 break
@@ -34,22 +34,22 @@ class BaseInterpreter:
             return True, None
         (l, s, pc) = self.stack[-1]
         b = self.program['code']['bytecode'][pc]
-        logger.info("Executing: " + str(b))
+        Logger.logger.info("Executing: " + str(b))
         if hasattr(self, "_"+b["opr"]):
             return False, getattr(self, "_"+b["opr"])(b)
         else:
-            logger.info("Unknown instruction: " + str(b))
+            Logger.logger.info("Unknown instruction: " + str(b))
             raise Exception("UnsupportedOperationException")
     
     def log_start(self):
-        logger.info("Starting execution...")
+        Logger.logger.info("Starting execution...")
     
     def log_done(self):
-        logger.info("Done.")
+        Logger.logger.info("Done.")
             
     def log_state(self):
-        logger.info("Stack: " + str(self.stack))
-        logger.info("Memory: " + str(self.memory))
+        Logger.logger.info("Stack: " + str(self.stack))
+        Logger.logger.info("Memory: " + str(self.memory))
 
     def _return(self, b):
         (l, os, pc) = self.stack.pop(-1)

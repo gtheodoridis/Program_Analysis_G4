@@ -78,7 +78,6 @@ def test_helloWorld():
 def test_fib():
     interpret = TaggedInterpreter(byte_codes['Calls_fib'], byte_codes)
     test_int = random.randint(0, 25)
-    logger.info("TRYING " + str(test_int))
     (l, s, pc) = [test_int], [], 0
     assert sympy.fibonacci(test_int+1) == interpret.run((l, s, pc)).value
 

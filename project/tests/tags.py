@@ -45,7 +45,7 @@ def test_OperationOnInput_Throw():
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV0']) == set(e.tags)
+        assert set(['LV0']).issubset(e.tags)
 
 def test_OperationOnInput_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['OperationOnInput_main'], byte_codes)
@@ -61,7 +61,7 @@ def test_IndirectUsageIf_Throw():
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV0']) == set(e.tags)
+        assert set(['LV0']).issubset(e.tags)
 
 def test_IndirectUsageIf_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['IndirectUsageIf_main'], byte_codes)

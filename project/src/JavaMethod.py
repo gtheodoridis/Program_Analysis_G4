@@ -1,4 +1,4 @@
-from .Logger import logger
+import Logger
 
 class JavaMethod:
     def __init__(self):
@@ -17,7 +17,7 @@ class JavaMethod:
         return None
     
     def _println(system, str):
-        logger.info("Printing value: " + str)
+        Logger.logger.info("Printing value: " + str)
 
     def _length(str):
         return len(str)

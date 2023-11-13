@@ -1,8 +1,8 @@
-from .JavaMethod import JavaMethod
-from .Comparison import Comparison
+import JavaMethod
+import Comparison
 
-from .BaseInterpreter import BaseInterpreter
-from .Logger import logger
+import BaseInterpreter
+import Logger
 
 
 class FailedTagException(Exception):
@@ -22,14 +22,14 @@ class TaggedValue():
     def __repr__(self):
         return self.__str__()
 
-class TaggedInterpreter(BaseInterpreter):
+class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
     def __init__(self, program, avail_programs):
         super().__init__(program, avail_programs)
 
-        self.comparison = Comparison 
-        from .ArithmeticOperation import ArithmeticOperation
-        self.arithmeticOperation = ArithmeticOperation
-        self.javaMethod = JavaMethod 
+        self.comparison = Comparison.Comparison 
+        import ArithmeticOperation
+        self.arithmeticOperation = ArithmeticOperation.ArithmeticOperation
+        self.javaMethod = JavaMethod.JavaMethod 
         self.functions = []
         self.if_conditions = []
 
@@ -54,7 +54,7 @@ class TaggedInterpreter(BaseInterpreter):
 
         ret = super().run(f)
 
-        logger.debug(self.history)
+        Logger.logger.debug(self.history)
         if ret:
             return ret
 
@@ -63,7 +63,7 @@ class TaggedInterpreter(BaseInterpreter):
             return True, None
         (l, s, pc) = self.stack[-1]
         b = self.program['code']['bytecode'][pc]
-        logger.info("Executing: " + str(b))
+        Logger.logger.info("Executing: " + str(b))
 
         self.log_history((l, s, pc))
 
@@ -73,21 +73,21 @@ class TaggedInterpreter(BaseInterpreter):
             except FailedTagException as e:
                 raise e
             except Exception as e:
-                logger.error("Exception happened during " + str(self.history["last_opr"]))
-                failed_tags = []
+                Logger.logger.error("Exception happened during " + str(self.history["last_opr"]))
+                failed_tags = set()
 
                 for arg in self.history["last_opr"]["args"]:
                     for tag in arg.tags:
                         if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
-                            failed_tags.append(tag)
+                            failed_tags.add(tag)
                 for cond in self.if_conditions:
                     tags = cond[0].tags.union(cond[2].tags)
                     for tag in tags:
                         if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
-                            failed_tags.append(tag)
+                            failed_tags.add(tag)
                 raise FailedTagException(e, failed_tags) from None
         else:
-            logger.error("Unknown instruction: " + str(b))
+            Logger.logger.error("Unknown instruction: " + str(b))
             raise Exception("UnsupportedOperationException")
         
     def log_history(self, f):
@@ -183,11 +183,11 @@ class TaggedInterpreter(BaseInterpreter):
         if condition:
             pc = b["target"]
             self.if_conditions.append((os[-1], b["condition"], zero))
-            self.functions.append(("if condition", os[-2], b["condition"], zero))
+            self.functions.append(("if condition", os[-1], b["condition"], zero))
         else:
             pc = pc + 1
             self.if_conditions.append((os[-1], "not_"+b["condition"], zero))
-            self.functions.append(("if condition", os[-2], "not_"+b["condition"], zero))
+            self.functions.append(("if condition", os[-1], "not_"+b["condition"], zero))
         self.stack.append((lv, os[:-1], pc))
 
     def _binary(self, b):
@@ -252,7 +252,7 @@ class TaggedInterpreter(BaseInterpreter):
                     self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
         self.functions.append((b["method"]["name"], b["method"]["args"], os[-arg_num:], b["method"]["returns"]))
-        logger.info("Function calls stack: " + str(self.functions))
+        Logger.logger.info("Function calls stack: " + str(self.functions))
 
     def _negate(self, b):
         (lv, os, pc) = self.stack.pop(-1)

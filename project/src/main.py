@@ -1,4 +1,3 @@
-from Interpreter import *
 from TaggedInterpreter import *
 from general import *
 from Logger import logger

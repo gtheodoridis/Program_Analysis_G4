@@ -2,7 +2,7 @@ import glob
 import pathlib
 import subprocess
 
-from .Logger import logger
+import Logger
 
 def get_paths(folder_path):
     return glob.glob(folder_path + '/**/*.json', recursive = True)
