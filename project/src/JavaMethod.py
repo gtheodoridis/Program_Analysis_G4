@@ -1,4 +1,4 @@
-from Logger import logger
+from .Logger import logger
 
 class JavaMethod:
     def __init__(self):

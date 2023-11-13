@@ -1,8 +1,8 @@
-from JavaMethod import JavaMethod
-from Comparison import Comparison
+from .JavaMethod import JavaMethod
+from .Comparison import Comparison
 
-from BaseInterpreter import BaseInterpreter
-from Logger import logger
+from .BaseInterpreter import BaseInterpreter
+from .Logger import logger
 
 
 class FailedTagException(Exception):
@@ -27,7 +27,7 @@ class TaggedInterpreter(BaseInterpreter):
         super().__init__(program, avail_programs)
 
         self.comparison = Comparison 
-        from ArithmeticOperation import ArithmeticOperation
+        from .ArithmeticOperation import ArithmeticOperation
         self.arithmeticOperation = ArithmeticOperation
         self.javaMethod = JavaMethod 
         self.functions = []
@@ -168,9 +168,11 @@ class TaggedInterpreter(BaseInterpreter):
         if condition:
             pc = b["target"]
             self.if_conditions.append((os[-2], b["condition"], os[-1]))
+            self.functions.append(("if condition", os[-2], b["condition"], os[-1]))
         else:
             pc = pc + 1
             self.if_conditions.append((os[-2], "not_"+b["condition"], os[-1]))
+            self.functions.append(("if condition", os[-2], "not_"+b["condition"], os[-1]))
         self.stack.append((lv, os[:-2], pc))
 
     def _ifz(self, b): 
@@ -181,9 +183,11 @@ class TaggedInterpreter(BaseInterpreter):
         if condition:
             pc = b["target"]
             self.if_conditions.append((os[-1], b["condition"], zero))
+            self.functions.append(("if condition", os[-2], b["condition"], zero))
         else:
             pc = pc + 1
             self.if_conditions.append((os[-1], "not_"+b["condition"], zero))
+            self.functions.append(("if condition", os[-2], "not_"+b["condition"], zero))
         self.stack.append((lv, os[:-1], pc))
 
     def _binary(self, b):

@@ -1,4 +1,4 @@
-from Logger import logger
+from .Logger import logger
 
 class BaseInterpreter:
     def __init__(self, program, avail_programs):
