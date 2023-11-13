@@ -1,6 +1,4 @@
-from src.TaggedInterpreter import *
-from src.general import *
-from src.Logger import logger
+
 import json
 import os
 import argparse
@@ -8,6 +6,11 @@ import ast
 import hashlib
 import sys
 
+sys.path.append('./src/')
+
+from TaggedInterpreter import *
+from general import *
+from Logger import logger
 
 class ParseMemoryValues(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -75,7 +78,6 @@ def main(folder_path, folder_path_target, file_path, l_values, memory_values):
         # interpret.memory = [["str1","str2"]]
         try:
             interpret.run((l, s, pc))
-            raise Exception("THIS SHOULD NEVER HAPPEN")
         except FailedTagException as e:
             print(e)
             generate_report(e, interpret, function_name, json_obj, file_path)
@@ -118,6 +120,8 @@ if __name__ == "__main__":
         args.folder_path = args.folder_path + "/"
     if not args.folder_path_target.endswith('/'):
         args.folder_path_target = args.folder_path_target + "/"
+
+    args.file_path = args.folder_path_target + os.path.splitext(args.file_path)[0].split('/')[-1] + ".json"
     
     main(args.folder_path, args.folder_path_target, args.file_path, args.local_variables_values, args.memory_values)
 
