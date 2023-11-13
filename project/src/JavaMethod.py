@@ -17,7 +17,7 @@ class JavaMethod:
         return None
     
     def _println(system, str):
-        logger.info(str)
+        logger.info("Printing value: " + str)
 
     def _length(str):
         return len(str)
