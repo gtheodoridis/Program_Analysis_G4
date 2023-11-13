@@ -65,8 +65,10 @@ def main(folder_path, folder_path_target, file_path, l_values, memory_values):
     with open(file_path, 'r') as file:
         json_obj = json.load(file)
         functions = get_functions(os.path.basename(file_path).split(".")[0], json_obj)
-        function_name = 'ArrayElement_main'
+        print(function_name)
+        # function_name = 'ArrayElement_main'
         interpret = TaggedInterpreter(functions[function_name], functions)
+        print("test", l_values, memory_values)
         (l, s, pc) = l_values, [], 0
         # (l, s, pc) = [0, 1], [], 0
         interpret.memory = memory_values
@@ -91,9 +93,9 @@ if __name__ == "__main__":
                         help='Path to the class file of the main function. Should be a .class file.')
     
     # Adding arguments for local variables and memory values
-    parser.add_argument('--local_variables_values', nargs='+', required=True, type=parse_local_variable,
+    parser.add_argument('--local_variables_values', nargs='+', default=[], type=parse_local_variable,
                     help='List of values for local variables (integers or strings)')
-    parser.add_argument('--memory_values', nargs='+', required=True, action=ParseMemoryValues,
+    parser.add_argument('--memory_values', nargs='+', default=[], action=ParseMemoryValues,
                     help='Lists of values for memory, each list enclosed in square brackets and separated by spaces, e.g., [1,2] ["str3", "str4"]')
 
     args = parser.parse_args()
