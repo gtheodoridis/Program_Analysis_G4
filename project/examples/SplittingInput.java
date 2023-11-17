@@ -1,7 +1,7 @@
 public class SplittingInput {
-    public static void main(String str1, String str2) {
+    public static void main(String[] args) {
         
-        String input = str2;
+        String input = args[1];
         
         // Split the input into two halves
         String new_var = input.substring(0, input.length() / 2);

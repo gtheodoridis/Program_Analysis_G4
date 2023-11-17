@@ -23,29 +23,29 @@ def before_tests():
 
 def test_DirectInputsUsage_Throw():
     interpret = TaggedInterpreter(byte_codes['DirectInputsUsage_main'], byte_codes)
-    (l, s, pc) = [0, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["0", "1"]]
     try:
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV0']) == set(e.tags)
+        assert set(['MVEL1']) == set(e.tags)
 
 def test_DirectInputsUsage_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['DirectInputsUsage_main'], byte_codes)
-    (l, s, pc) = [1, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["1", "1"]]
     interpret.run((l, s, pc))
 
 def test_OperationOnInput_Throw():
     interpret = TaggedInterpreter(byte_codes['OperationOnInput_main'], byte_codes)
-    (l, s, pc) = [-1, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["-1", "1"]]
     try:
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV0']).issubset(e.tags)
+        assert set(['MVEL0']).issubset(e.tags)
 
 def test_OperationOnInput_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['OperationOnInput_main'], byte_codes)
@@ -55,29 +55,29 @@ def test_OperationOnInput_DoesntThrow():
 
 def test_IndirectUsageIf_Throw():
     interpret = TaggedInterpreter(byte_codes['IndirectUsageIf_main'], byte_codes)
-    (l, s, pc) = [1, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["1", "1"]]
     try:
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV0']).issubset(e.tags)
+        assert set(['MVEL0']).issubset(e.tags)
 
 def test_IndirectUsageIf_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['IndirectUsageIf_main'], byte_codes)
-    (l, s, pc) = [-1, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["-1", "1"]]
     interpret.run((l, s, pc))
 
 def test_TaggingInsideFunction_Throw():
     interpret = TaggedInterpreter(byte_codes['TaggingInsideFunction_main'], byte_codes)
-    (l, s, pc) = [1, 0], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["1", "0"]]
     try:
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['LV1']) == set(e.tags)
+        assert set(['MVEL1']) == set(e.tags)
 
 def test_TaggingInsideFunction_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['TaggingInsideFunction_main'], byte_codes)
@@ -87,40 +87,40 @@ def test_TaggingInsideFunction_DoesntThrow():
 
 def test_SplittingInput_Throw():
     interpret = TaggedInterpreter(byte_codes['SplittingInput_main'], byte_codes)
-    (l, s, pc) = ["str1", "str2"], [], 0
-    interpret.memory = []
-    try:
-        interpret.run((l, s, pc))
-        raise Exception("THIS SHOULD NEVER HAPPEN")
-    except FailedTagException as e:
-        assert set(['LV1']) == set(e.tags)
-
-def test_DirectInputUsageIf_Throw():
-    interpret = TaggedInterpreter(byte_codes['DirectInputUsageIf_main'], byte_codes)
-    (l, s, pc) = [1, 0], [], 0
-    interpret.memory = []
-    try:
-        interpret.run((l, s, pc))
-        raise Exception("THIS SHOULD NEVER HAPPEN")
-    except FailedTagException as e:
-        assert set(['LV0', 'LV1']) == set(e.tags)
-
-def test_ArrayAcces_Throw():
-    interpret = TaggedInterpreter(byte_codes['ArrayAcces_main'], byte_codes)
-    (l, s, pc) = [0, 5], [], 0
-    interpret.memory = [["str1","str2"]]
-    try:
-        interpret.run((l, s, pc))
-        raise Exception("THIS SHOULD NEVER HAPPEN")
-    except FailedTagException as e:
-        assert set(['LV1']) == set(e.tags)
-
-def test_ArrayElement_Throw():
-    interpret = TaggedInterpreter(byte_codes['ArrayElement_main'], byte_codes)
-    (l, s, pc) = [0, 1], [], 0
-    interpret.memory = [["str1","str2"]]
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["str1", "str2"]]
     try:
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
         assert set(['MVEL1']) == set(e.tags)
+
+def test_DirectInputUsageIf_Throw():
+    interpret = TaggedInterpreter(byte_codes['DirectInputUsageIf_main'], byte_codes)
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["1", "0"]]
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['MVEL0', 'MVEL1']) == set(e.tags)
+
+def test_ArrayAcces_Throw():
+    interpret = TaggedInterpreter(byte_codes['ArrayAcces_main'], byte_codes)
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["str1","str2"]]
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['MV0']).issubset(e.tags)
+
+def test_ArrayElement_Throw():
+    interpret = TaggedInterpreter(byte_codes['ArrayElement_main'], byte_codes)
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["str1"]]
+    try:
+        interpret.run((l, s, pc))
+        raise Exception("THIS SHOULD NEVER HAPPEN")
+    except FailedTagException as e:
+        assert set(['MVEL0']) == set(e.tags)

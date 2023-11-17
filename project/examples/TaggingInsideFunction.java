@@ -3,8 +3,8 @@ public class TaggingInsideFunction {
         return 8/input3;
     }
 
-    public static void main(int input, int input2) {
-        int new_var = input2; 
+    public static void main(String[] args) {
+        int new_var = Integer.parseInt(args[1]); 
         int fail_var = myFunction(new_var); 
     }
 }

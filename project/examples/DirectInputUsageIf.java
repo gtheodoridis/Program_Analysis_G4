@@ -1,8 +1,8 @@
 public class DirectInputUsageIf {
-    public static void main(int input, int input2) {
+    public static void main(String[] args) {
         int new_var;
-        if (input > 0) {
-            new_var = 2 / input2; 
+        if (Integer.parseInt(args[0]) > 0) {
+            new_var = 2 / Integer.parseInt(args[1]); 
         }
     }
 }

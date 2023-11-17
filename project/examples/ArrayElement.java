@@ -1,6 +1,6 @@
 public class ArrayElement {
-    public static void main(String[] args, int i){
-        String str = args[i];
+    public static void main(String[] args){
+        String str = args[0];
         if (str == str) {
             int a = 100 / 0;
         }
