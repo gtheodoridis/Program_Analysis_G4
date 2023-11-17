@@ -111,7 +111,7 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
 
     def _array_load(self, b):
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_array_load", "args":[os[-1]]}
+        self.history["last_opr"] = {"opr_name":"_array_load", "args":[self.memory[os[-2].value], os[-1]]}
         index_el = os[-1]
 
         index_array = os[-2]
@@ -125,7 +125,7 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
     def _array_store(self, b):
         # Store a value in an array
         (lv, os, pc) = self.stack.pop(-1)
-        self.history["last_opr"] = {"opr_name":"_array_store", "args":[os[-1]]}
+        self.history["last_opr"] = {"opr_name":"_array_store", "args":[self.memory[os[-3].value], os[-2], os[-1]]}
         value = os[-1]  # Value to store
 
         index_of_array = os[-3].value  # Index of the array to store in
@@ -222,7 +222,7 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
                 taggs = []
                 for arg in os[-arg_num:]:
                     taggs.extend(arg.tags)
-                self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, taggs)], pc + 1))
+                self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, set(taggs))], pc + 1))
             else:
                 raise Exception("UnsupportedMethodNameException")
         elif b["access"] == "static":
@@ -238,7 +238,7 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
                 taggs = []
                 for arg in os[-arg_num:]:
                     taggs.extend(arg.tags)
-                self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, taggs)], pc + 1))
+                self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, set(taggs))], pc + 1))
             else:
                 pr = None
                 for av_pr in self.avail_programs:

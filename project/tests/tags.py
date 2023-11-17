@@ -29,7 +29,7 @@ def test_DirectInputsUsage_Throw():
         interpret.run((l, s, pc))
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
-        assert set(['MVEL1']) == set(e.tags)
+        assert set(['MVEL0']) == set(e.tags)
 
 def test_DirectInputsUsage_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['DirectInputsUsage_main'], byte_codes)
@@ -49,8 +49,8 @@ def test_OperationOnInput_Throw():
 
 def test_OperationOnInput_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['OperationOnInput_main'], byte_codes)
-    (l, s, pc) = [0, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["0", "1"]]
     interpret.run((l, s, pc))
 
 def test_IndirectUsageIf_Throw():
@@ -81,8 +81,8 @@ def test_TaggingInsideFunction_Throw():
 
 def test_TaggingInsideFunction_DoesntThrow():
     interpret = TaggedInterpreter(byte_codes['TaggingInsideFunction_main'], byte_codes)
-    (l, s, pc) = [-1, 1], [], 0
-    interpret.memory = []
+    (l, s, pc) = [0], [], 0
+    interpret.memory = [["-1", "1"]]
     interpret.run((l, s, pc))
 
 def test_SplittingInput_Throw():

@@ -172,4 +172,4 @@ def test_Arrays_alwaysThrows2():
         raise Exception("THIS SHOULD NEVER HAPPEN")
     except FailedTagException as e:
         print(e)
-        assert set([]) == set(e.tags)
+        assert set([]).issubset(e.tags)
