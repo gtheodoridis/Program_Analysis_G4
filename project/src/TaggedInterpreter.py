@@ -81,7 +81,7 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
                         if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
                             failed_tags.add(tag)
                 for cond in self.if_conditions:
-                    tags = cond[0].tags.union(cond[2].tags)
+                    tags = set(cond[0].tags).union(set(cond[2].tags))
                     for tag in tags:
                         if not tag.startswith("PUSH") and not tag.startswith("ARR") and not tag.startswith("JAVA"):
                             failed_tags.add(tag)
@@ -224,32 +224,46 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
                     taggs.extend(arg.tags)
                 self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, taggs)], pc + 1))
             else:
-                raise Exception
+                raise Exception("UnsupportedMethodNameException")
         elif b["access"] == "static":
-            pr = None
-            for av_pr in self.avail_programs:
-                if av_pr.endswith(b["method"]["name"]):
-                    pr = av_pr
-            if not pr:
-                raise Exception("UnsupportedOperationException")
+            if hasattr(self.javaMethod, "_" + b["method"]["name"]):
+                params = [i.value for i in os[-arg_num:]]
+                self.history["last_opr"] = {"opr_name":"_invoke", "method_name":b["method"]["name"], "args":os[-arg_num:]}
+                value = getattr(self.javaMethod, "_" + b["method"]["name"])(*params)
+                # if b["method"]["name"] == "println":
+                #     if b["method"]["ref"]["name"] == os[-arg_num-1]:
+                #         self.stack.append((lv, os[:-arg_num-1] + [value], pc + 1))
+                #     else:
+                #         raise Exception
+                taggs = []
+                for arg in os[-arg_num:]:
+                    taggs.extend(arg.tags)
+                self.stack.append((lv, os[:-arg_num-1] + [TaggedValue(value, taggs)], pc + 1))
+            else:
+                pr = None
+                for av_pr in self.avail_programs:
+                    if av_pr.endswith(b["method"]["name"]):
+                        pr = av_pr
+                if not pr:
+                    raise Exception("UnsupportedOperationException")
 
-            interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
-            if arg_num == 0:
-                (l_new, s_new, pc_new) = [], [], 0
-            else:
-                (l_new, s_new, pc_new) = os[-arg_num:], [], 0
-            self.history["last_opr"] = {"opr_name":"_invoke", "metho_name":b["method"]["name"], "args":[l_new, s_new]}
-            ret = interpret.run((l_new, s_new, pc_new))
-            if b["method"]["returns"] == None:
+                interpret = self.__class__(self.avail_programs[pr], self.avail_programs)
                 if arg_num == 0:
-                    self.stack.append((lv, os, pc + 1))
+                    (l_new, s_new, pc_new) = [], [], 0
                 else:
-                    self.stack.append((lv, os[:-arg_num], pc + 1))
-            else:
-                if arg_num == 0:
-                    self.stack.append((lv, os + [ret], pc + 1))
+                    (l_new, s_new, pc_new) = os[-arg_num:], [], 0
+                self.history["last_opr"] = {"opr_name":"_invoke", "method_name":b["method"]["name"], "args":[l_new, s_new]}
+                ret = interpret.run((l_new, s_new, pc_new))
+                if b["method"]["returns"] == None:
+                    if arg_num == 0:
+                        self.stack.append((lv, os, pc + 1))
+                    else:
+                        self.stack.append((lv, os[:-arg_num], pc + 1))
                 else:
-                    self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
+                    if arg_num == 0:
+                        self.stack.append((lv, os + [ret], pc + 1))
+                    else:
+                        self.stack.append((lv, os[:-arg_num] + [ret], pc + 1))
 
         self.functions.append((b["method"]["name"], b["method"]["args"], os[-arg_num:], b["method"]["returns"]))
         Logger.logger.info("Function calls stack: " + str(self.functions))

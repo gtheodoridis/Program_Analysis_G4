@@ -10,7 +10,7 @@ def main():
     folder_path = "../examples"
     folder_path_target = "../examples/decompiled/"
     analyse_bytecode(folder_path, folder_path_target)
-    file_path = "../examples/decompiled/ArrayElement.json"
+    file_path = "../examples/decompiled/IndirectUsageIf.json"
     # file_path = "../../course-02242-examples/decompiled/dtu/compute/exec/Array.json"
 
 
@@ -32,14 +32,14 @@ def main():
         # interpret.memory = [test_arr]
         # assert test_arr[0] == interpret.run((l, s, pc))
 
-        interpret = TaggedInterpreter(functions['ArrayElement_main'], functions)
-        (l, s, pc) = [0, 1], [], 0
-        interpret.memory = [["str1","str2"]]
+        interpret = TaggedInterpreter(functions['IndirectUsageIf_main'], functions)
+        (l, s, pc) = [0], [], 0
+        interpret.memory = [["1", "1"]]
         try:
             interpret.run((l, s, pc))
             raise Exception("THIS SHOULD NEVER HAPPEN")
         except FailedTagException as e:
-            assert set(['LV1']) == set(e.tags)
+            assert set(['MVEL0']) == set(e.tags)
 
         # interpret = TaggedInterpreter(functions['Calls_fib'], functions)
         # import sympy

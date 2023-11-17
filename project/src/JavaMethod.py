@@ -24,3 +24,6 @@ class JavaMethod:
     
     def _charAt(str, index):
         return ord(str[index])
+
+    def _parseInt(str):
+        return int(str)

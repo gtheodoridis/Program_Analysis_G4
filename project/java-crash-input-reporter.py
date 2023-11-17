@@ -14,23 +14,15 @@ from Logger import logger
 
 class ParseMemoryValues(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+        # Process the values here as needed
+        # For example, you might want to split each value by spaces
         processed_values = []
         for value in values:
-            try:
-                # Convert string representation of list to actual list
-                processed_value = ast.literal_eval(value)
-                if not isinstance(processed_value, list):
-                    raise ValueError()
-                processed_values.append(processed_value)
-            except:
-                raise argparse.ArgumentTypeError(f"Invalid memory value: {value}")
+            # Split by spaces and extend the list
+            processed_values.extend(value.split())
+        
+        # Set the processed values in the namespace
         setattr(namespace, self.dest, processed_values)
-
-def parse_local_variable(value):
-    try:
-        return int(value)
-    except ValueError:
-        return value
     
 def generate_report(exception, interpreter, function_name, json_obj, file_path):
     # Calculate SHA256 of the file
@@ -68,10 +60,8 @@ def main(folder_path, folder_path_target, file_path, l_values, memory_values):
     with open(file_path, 'r') as file:
         json_obj = json.load(file)
         functions = get_functions(os.path.basename(file_path).split(".")[0], json_obj)
-        print(function_name)
         # function_name = 'ArrayElement_main'
         interpret = TaggedInterpreter(functions[function_name], functions)
-        print("test", l_values, memory_values)
         (l, s, pc) = l_values, [], 0
         # (l, s, pc) = [0, 1], [], 0
         interpret.memory = memory_values
@@ -95,10 +85,10 @@ if __name__ == "__main__":
                         help='Path to the class file of the main function. Should be a .class file.')
     
     # Adding arguments for local variables and memory values
-    parser.add_argument('--local_variables_values', nargs='+', default=[], type=parse_local_variable,
-                    help='List of values for local variables (integers or strings)')
+    # parser.add_argument('--local_variables_values', nargs='+', default=[], type=parse_local_variable,
+    #                 help='List of values for local variables (integers or strings)')
     parser.add_argument('--memory_values', nargs='+', default=[], action=ParseMemoryValues,
-                    help='Lists of values for memory, each list enclosed in square brackets and separated by spaces, e.g., [1,2] ["str3", "str4"]')
+                    help='Lists of string values passed to program inside argv, each element separated by spaces, e.g., "str3 str4"')
 
     args = parser.parse_args()
 
@@ -123,5 +113,12 @@ if __name__ == "__main__":
 
     args.file_path = args.folder_path_target + os.path.splitext(args.file_path)[0].split('/')[-1] + ".json"
     
+    if args.memory_values:
+        args.local_variables_values = [0]
+        args.memory_values = [args.memory_values]
+    else:
+        args.local_variables_values = []
+        args.memory_values = [args.memory_values]
+
     main(args.folder_path, args.folder_path_target, args.file_path, args.local_variables_values, args.memory_values)
 
