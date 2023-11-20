@@ -18,7 +18,7 @@ def run_script(script_path, args):
 
 def run_java(args):
     start_time = time.perf_counter()
-    subprocess.run(["java", *args], 
+    subprocess.run(["java", "-cp", *args], 
                    stdout=subprocess.DEVNULL, 
                    stderr=subprocess.DEVNULL)
     end_time = time.perf_counter()
@@ -73,11 +73,13 @@ def main(folder_path, folder_path_target, file_path, memory_values):
     print(f"Average execution time of each java bytecode operation in analysis: {average_time/num_of_bytecode_opr} seconds")
 
     args_file_path = args_file_path.replace('.class', '')
+    args_file_path1 = args_file_path.split('/')[0]
+    args_file_path2 = args_file_path.split('/')[1]
     for _ in range(100):
         if memory_values:
-            execution_time = run_java([args_file_path, *memory_values])
+            execution_time = run_java([args_file_path1, args_file_path2, *memory_values])
         else:
-            execution_time = run_java([args_file_path])
+            execution_time = run_java([args_file_path1, args_file_path2])
         total_time += execution_time
 
     average_time = total_time / 100
