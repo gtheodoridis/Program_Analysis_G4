@@ -3,7 +3,7 @@ import Comparison
 
 import BaseInterpreter
 import Logger
-
+import cProfile as profile
 
 class FailedTagException(Exception):
     def __init__(self, e, tags):
@@ -37,7 +37,9 @@ class TaggedInterpreter(BaseInterpreter.BaseInterpreter):
         self.new_arr_counter = 0
         self.push_counter = 0
 
-
+    def profile(self, f):
+        profile.runctx('self.run(f)', globals(), locals())
+ 
     def run(self, f):
         (l, os, pc) = f
         for ind in range(len(l)):
