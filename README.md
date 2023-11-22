@@ -8,7 +8,7 @@ assignment5: abstract interpretation (static analysis)<br/>
 assignment6: abstract interpretation with fixpoint detection (static analysis)<br/>
 assignment7: concolic execution (dynamic analysis)<br/>
 
-project: Identifying Input Portions Causing Crash using Input Tagging and Propagation)<br/>
+project: Identifying Input Portions Causing Crash using Input Tagging and Propagation<br/>
 
 tools:<br/>
 https://github.com/kalhauge/jvm2json
